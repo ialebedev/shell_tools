@@ -155,6 +155,7 @@ def create_base_directories ():
     hostname = os.uname().nodename
 
     os.mkdir('/mnt/' + hostname + '/Temp', 0o777)
+    os.mkdir('/mnt/' + hostname + '/Temp/Media', 0o777)
     os.mkdir('/mnt/' + hostname + '/Temp/MoTemp', 0o777)
     os.mkdir('/mnt/' + hostname + '/Temp/Blender', 0o777)
     os.mkdir('/mnt/' + hostname + '/Temp/Houdini', 0o777)
