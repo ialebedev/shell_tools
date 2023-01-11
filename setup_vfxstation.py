@@ -55,7 +55,7 @@ def install_soft ():
 
     # SOFT FOR AFRENDER
     if input('Install soft for afrender? [y/N] ').lower() == 'y':
-        os.system('pacman -S --needed --noconfirm glu alsa-lib libglvnd libxv libxmu libxi libxrender ttf-liberation')
+        os.system('pacman -S --needed --noconfirm glu alsa-lib libglvnd libxv libxmu libxi libxrender libxkbcommon ttf-liberation')
         time.sleep(1)
 
         # AFRENDER SERVICE
@@ -113,7 +113,7 @@ def link_soft ():
     os.symlink('/soft/OFX', '/usr/OFX')
     os.symlink('/soft/houdini', '/opt/houdini')
     os.symlink('/soft/foundry', '/usr/local/foundry')
-    os.symlink('/soft/nuke/Nuke13.1v3', '/usr/local/Nuke13.1v3')
+    os.symlink('/soft/nuke/Nuke13.2v5', '/usr/local/Nuke13.2v5')
 
     # Additional links
     os.symlink('/lib/libidn.so.12', '/lib/libidn.so.11')
@@ -159,9 +159,12 @@ def create_base_directories ():
     os.mkdir('/mnt/' + hostname + '/Temp/MoTemp', 0o777)
     os.mkdir('/mnt/' + hostname + '/Temp/Blender', 0o777)
     os.mkdir('/mnt/' + hostname + '/Temp/Houdini', 0o777)
+    os.mkdir('/mnt/' + hostname + '/Temp/Nuke', 0o777)
     os.mkdir('/mnt/' + hostname + '/Temp/Nuke/nuke-u1000', 0o777)
     os.mkdir('/mnt/' + hostname + '/Temp/Nuke/nuke-u1001', 0o777)
     os.mkdir('/mnt/' + hostname + '/Temp/Nuke/nuke-u1002', 0o777)
+
+    os.system('chmod -R 777 /mnt/' + hostname + '/Temp')
 
     time.sleep(1)
     print("Creating base directories ... Done")
