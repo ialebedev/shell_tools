@@ -55,7 +55,7 @@ def install_soft ():
 
     # SOFT FOR AFRENDER
     if input('Install soft for afrender? [y/N] ').lower() == 'y':
-        os.system('pacman -S --needed --noconfirm glu alsa-lib libglvnd libxv libxmu libxi libxrender libxkbcommon ttf-liberation')
+        os.system('pacman -S --needed --noconfirm glu alsa-lib nss freetype2 fontconfig libglvnd libxv libxmu libxi libxtst libxcomposite libxcursor libxrender libxkbcommon ttf-liberation')
         time.sleep(1)
 
         # AFRENDER SERVICE
