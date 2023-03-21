@@ -51,7 +51,7 @@ def setup_pacman_cache ():
 def install_soft ():
 
     # COMMON SOFT
-    os.system('pacman -S --needed --noconfirm sudo man tmux rsync bash-completion exfat-utils ntfs-3g unrar unzip p7zip dkms linux-lts-headers duf htop')
+    os.system('pacman -S --needed --noconfirm sudo man tmux rsync bash-completion exfat-utils ntfs-3g unrar unzip p7zip dkms duf htop')
 
     # SOFT FOR AFRENDER
     if input('Install soft for afrender? [y/N] ').lower() == 'y':
