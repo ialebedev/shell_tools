@@ -8,20 +8,30 @@ def setup_automount ():
 
     if not os.path.exists('/mnt/vfxserver01'):
         os.mkdir('/mnt/vfxserver01', 0o755)
+    
+    if not os.path.exists('/mnt/vfxcache01'):
+        os.mkdir('/mnt/vfxcache01', 0o755)
 
-    if not os.path.exists('/mnt/vfxbackup01'):
-        os.mkdir('/mnt/vfxbackup01', 0o755)
+    if not os.path.exists('/mnt/vfxstorage01'):
+        os.mkdir('/mnt/vfxstorage01', 0o755)
 
-    f = open('/etc/fstab', 'a')
-    f.write('\n# SERVERS\n')
-    f.write('192.168.20.10:/mnt/vfxbackup01\t\t\t\t/mnt/vfxbackup01\tnfs\t_netdev,x-systemd.mount-timeout=10,hard,intr,noatime\t0 2\n')
-    f.write('192.168.20.11:/mnt/vfxserver01\t\t\t\t/mnt/vfxserver01\tnfs\t_netdev,x-systemd.mount-timeout=10,hard,intr,noatime\t0 2\n')
-    f.close()
+    if not os.path.exists('/mnt/vfxstorage02'):
+        os.mkdir('/mnt/vfxstorage02', 0o755)
+
+    os.system('mount -t nfs 192.168.20.11:/mnt/vfxserver01 /mnt/vfxserver01')
+    os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/mnt-* /etc/systemd/system/')
+    time.sleep(1)
+
+    os.system('umount /mnt/vfxserver01')
+    time.sleep(1)
 
     os.system('systemctl daemon-reload')
-    os.system('mount -a')
-
+    os.system('systemctl enable --now mnt-vfxcache01.mount')
+    os.system('systemctl enable --now mnt-vfxserver01.mount')
+    os.system('systemctl enable --now mnt-vfxstorage01.mount')
+    os.system('systemctl enable --now mnt-vfxstorage02.mount')
     time.sleep(1)
+
     print('Setting up automount ... Done')
 
 # MOUNT PACMAN CACHE
@@ -33,25 +43,38 @@ def setup_pacman_cache ():
         if input('Pacman cache directory is not empty. Do you want to clear it? [y/N]: ').lower() == 'y':
             try:
                 shutil.rmtree(path)
+                time.sleep(1)
+                os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/var-* /etc/systemd/system/')
+                os.system('systemctl enable --now var-cache-pacman.mount')
             except OSError as e:
                 print("Error: %s : %s" % (path, e.strerror))
 
-    f = open('/etc/fstab', 'a')
-    f.write('\n# PACMAN CACHE\n')
-    f.write('192.168.20.11:/mnt/vfxserver01/Tools/_caches/pacman\t/var/cache/pacman\tnfs\t_netdev,x-systemd.mount-timeout=0,hard,intr,noatime\t0 2\n')
-    f.close()
-
-    os.system('systemctl daemon-reload')
-    os.system('mount -a')
-
     time.sleep(1)
     print('Setting up pacman cache ... Done')
+
+# SETUP HOSTS
+def setup_hosts ():
+
+    hostname = os.uname().nodename
+
+    os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/hosts /etc/')
+
+    with open('/etc/hosts', 'r') as file :
+        filedata = file.read()
+
+    filedata = filedata.replace('vfxhost', hostname)
+
+    with open('/etc/hosts', 'w') as file :
+        file.write(filedata)
+
+    time.sleep(1)
+    print('Setting up /etc/hosts ... Done')
 
 # SOFT
 def install_soft ():
 
     # COMMON SOFT
-    os.system('pacman -S --needed --noconfirm sudo man tmux rsync bash-completion exfat-utils ntfs-3g unrar unzip p7zip dkms duf htop')
+    os.system('pacman -S --needed --noconfirm sudo man tmux rsync bash-completion exfat-utils ntfs-3g unrar unzip p7zip dkms duf htop util-linux ethtool numactl')
 
     # SOFT FOR AFRENDER
     if input('Install soft for afrender? [y/N] ').lower() == 'y':
@@ -62,13 +85,14 @@ def install_soft ():
         if not os.path.exists('/usr/lib/systemd/system/afrender.service'):
             if input('Setup afrender sevice? [y/N] ').lower() == 'y':
 
-                path = '/mnt/vfxserver01/Tools/_configuration_files/usr/lib/systemd/system/afrender.service'
+                path = '/mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/afrender.service'
 
                 if os.path.exists(path):
                     try:
-                        os.system('cp -r /mnt/vfxserver01/Tools/_configuration_files/usr/lib/systemd/system/afrender.service /usr/lib/systemd/system/')
-                        os.symlink('/usr/lib/systemd/system/afrender.service', '/etc/systemd/system/multi-user.target.wants/afrender.service')
-                        os.system('systemctl enable afrender')
+                        os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/afrender.service /etc/systemd/system/')
+                        os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/stop_hserver.service /etc/systemd/system/')
+                        os.system('systemctl enable afrender.service')
+                        os.system('systemctl enable stop_hserver.service')
                         time.sleep(1)
                     except OSError as e:
                         print("Error: %s : %s" % (path, e.strerror))
@@ -77,7 +101,7 @@ def install_soft ():
 
     # SOFT FOR VFXSTATION
     if input('Install soft for vfxstation? [y/N] ').lower() == 'y':
-        os.system('pacman -S --needed --noconfirm sddm plasma-desktop plasma-pa plasma-systemmonitor kdeplasma-addons breeze breeze-gtk kde-gtk-config konsole dolphin pulseaudio pulseaudio-alsa gwenview okular spectacle simplescreenrecorder filezilla firefox firefox-adblock-plus ttf-dejavu ttf-liberation ttf-bitstream-vera cantarell-fonts ark kscreen krename kate ktorrent kolourpaint kdenlive mpv mediainfo inkscape python-pyqt5 python-lxml telegram-desktop nvidia-dkms opencl-nvidia pyside2 qt5-xmlpatterns zenity hddtemp psensor')
+        os.system('pacman -S --needed --noconfirm sddm plasma-desktop plasma-pa plasma-systemmonitor kdeplasma-addons breeze breeze-gtk kde-gtk-config konsole dolphin pipewire pipewire-pulse okular spectacle filezilla firefox firefox-ublock-origin ttf-dejavu ttf-liberation ttf-bitstream-vera cantarell-fonts ark kscreen krename kate ktorrent kolourpaint kdenlive mpv mediainfo inkscape python-pyqt5 python-lxml telegram-desktop nvidia-dkms opencl-nvidia pyside2 qt5-xmlpatterns hddtemp psensor')
 
         f = open('/etc/sddm.conf', 'w')
         f.write('[Theme]\nCurrent=breeze\n\n')
@@ -100,7 +124,6 @@ def link_soft ():
     os.mkdir('/etc/skel/.nuke')
     os.symlink('/mnt/vfxserver01/Tools/Nuke/menu.py', '/etc/skel/.nuke/menu.py')
     os.symlink('/mnt/vfxserver01/Tools/Nuke/init.py', '/etc/skel/.nuke/init.py')
-    os.symlink('/mnt/vfxserver01/Tools/Nuke/ToolSet', '/etc/skel/.nuke/ToolSet')
 
     # Houdini Preferences
     os.symlink('/mnt/vfxserver01/Tools/_user_preferences/sesi_licenses.pref', '/etc/skel/.sesi_licenses.pref')
@@ -113,12 +136,15 @@ def link_soft ():
     os.symlink('/soft/OFX', '/usr/OFX')
     os.symlink('/soft/houdini', '/opt/houdini')
     os.symlink('/soft/foundry', '/usr/local/foundry')
-    os.symlink('/soft/nuke/Nuke13.2v5', '/usr/local/Nuke13.2v5')
+    os.symlink('/soft/nuke/Nuke15.0v2', '/usr/local/Nuke15.0v2')
 
     # Additional links
     os.symlink('/lib/libidn.so.12', '/lib/libidn.so.11')
     os.symlink('/lib/libcrypt.so.2', '/lib/libcrypt.so.1')
-    os.symlink('/lib/libpython3.10.so', '/lib/libpython3.9.so.1.0')
+    os.symlink('/lib/libpython3.11.so', '/lib/libpython3.9.so')
+    os.symlink('/lib/libpython3.11.so.1.0', '/lib/libpython3.9.so.1.0')
+    os.symlink('/lib/libpython3.11.so', '/lib/libpython3.10.so')
+    os.symlink('/lib/libpython3.11.so.1.0', '/lib/libpython3.10.so.1.0')
 
     time.sleep(1)
     print("Linking software ... Done")
@@ -130,6 +156,15 @@ def stop_sleep_suspend_and_hibernate ():
 
     time.sleep(1)
     print("Stopping sleep, suspend, hibernate modes ... Done")
+
+# TRIM & SENSORS
+def setup_trim_and_sensors ():
+
+    os.system('sensors-detect')
+    os.system('systemctl enable fstrim.timer') 
+
+    time.sleep(1)
+    print("Enabling TRIM and lm_sensors ... Done")
 
 # USERS
 def create_users ():
@@ -202,6 +237,9 @@ def main ():
     if input('Setup pacman cache directory? [y/N] ').lower() == 'y':
         setup_pacman_cache()
 
+    if input('Setup /etc/hosts? [y/N] ').lower() == 'y':
+        setup_hosts()
+
     if input('Install software? [y/N] ').lower() == 'y':
         install_soft()
 
@@ -210,6 +248,9 @@ def main ():
 
     if input('Disable suspend & hibernate modes? [y/N] ').lower() == 'y':
         stop_sleep_suspend_and_hibernate()
+
+    if input('Enable TRIM and lm_sensors? [y/N] ').lower() == 'y':
+        setup_trim_and_sensors()
 
     if input('Create users? [y/N] ').lower() == 'y':
         create_users()
