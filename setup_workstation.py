@@ -9,6 +9,7 @@ def format_volumes():
     volumes = subprocess.check_output('lsblk')
 
 
+
 # MOUNT SERVERS
 def setup_automount ():
 
@@ -239,10 +240,14 @@ def main ():
 
     os.system('timedatectl set-ntp true')
 
-        
+    if input('Start pacstrap? [y/N]: ').lower() == 'y':
+        os.system('pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-firmware')
 
-    if input('Setup automount? [y/N]: ').lower() == 'y':
-        setup_automount()
+        if input('Choose ucode type: 1 - Intel, 2 - AMD? ').lower() == '2':
+            os.system('pacstrap /mnt amd-ucode')
+        else:
+            os.system('pacstrap /mnt intel-ucode')
+
 
     if input('Setup pacman cache directory? [y/N] ').lower() == 'y':
         setup_pacman_cache()
