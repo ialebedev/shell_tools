@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, sys, subprocess
+import os, stat, sys, subprocess
 
 
 # DISKs INFO
@@ -10,12 +10,9 @@ def get_volumes():
     # Get the list of DEVICES
     lsblk = subprocess.check_output('lsblk').decode('UTF-8').splitlines()
 
-#    lsblk = 'sdg1        8:97   0  12,5T  0 part \nsdh           8:112  0  12,7T  0 disk \n└─sdh1        8:113  0  12,5T  0 part \nsdi           8:128  0  12,7T  0 disk \n└─sdi1        8:129  0  12,5T  0 part \nsdj           8:144  0  12,7T  0 disk \n└─sdj1        8:145  0  12,5T  0 part \nsdk           8:160  0  12,7T  0 disk \n└─sdk1        8:161  0  12,5T  0 part \nsdl           8:176  0  12,7T  0 disk \n└─sdl1        8:177  0  12,5T  0 part \nsdm           8:192  1     0B  0 disk \nsr0          11:0    1  1024M  0 rom  \nnvme1n1     259:0    0 232,9G  0 disk \n├─nvme1n1p1 259:1    0    75G  0 part \n└─nvme1n1p2 259:2    0 157,9G  0 part \nnvme0n1     259:3    0 476,9G  0 disk \n├─nvme0n1p1 259:4    0     1G  0 part \n├─nvme0n1p2 259:5    0   256G  0 part \n├─nvme0n1p3 259:6    0    40G  0 part \n├─nvme0n1p4 259:7    0    40G  0 part \n├─nvme0n1p5 259:8    0    40G  0 part \n└─nvme0n1p6 259:9    0  99,9G  0 part \n'
- #   lsblk = lsblk.splitlines()
-
     devs = []
     for line in lsblk:
-        if not line.find('├') or not line.find('└'):
+        if line.find('nvme') > 1:
             devs.append(line[2:])
 
     vols = []
@@ -30,7 +27,7 @@ def get_volumes():
             vols.append(volume)
 
     # Print list of found VOLUMEs
-    print('=' * 40)
+    print('\n' + '=' * 40)
     print('Found VOLUMEs:')
     print('=' * 40)
 
@@ -64,16 +61,16 @@ def format_volumes(vols):
             match volume['name']:
                 case 'nvme0n1p1':
                     if input('Format /dev/nvme0n1p1? [y/N] ').lower() == 'y':
-#                        os.system('mkfs.vfat /dev/nvme0n1p1')
-                        print('Formatting /dev/nvme0n1p1 as FAT32')
+                        os.system('mkfs.vfat /dev/nvme0n1p1')
+                        print('Format /dev/nvme0n1p1 as FAT32')
                 case 'nvme0n1p2':
-                    if input('Format /dev/nvme0n1p2? [y/N] ').lower() == 'y':
-#                        os.system('mkswap /dev/nvme0n1p2')
-                        print('Formatting /dev/nvme0n1p2 as SWAP')
+                    if input('\nFormat /dev/nvme0n1p2? [y/N] ').lower() == 'y':
+                        os.system('mkswap /dev/nvme0n1p2')
+                        print('Format /dev/nvme0n1p2 as SWAP')
                 case _:
-                    if input('Format /dev/' + volume['name'] + '? [y/N] ').lower() == 'y':
-#                        os.system('mkfs.ext4 /dev/' + volume['name'])
-                        print('Formatting /dev/' + volume['name'] + ' as EXT4')
+                    if input('\nFormat /dev/' + volume['name'] + '? [y/N] ').lower() == 'y':
+                        os.system('mkfs.ext4 /dev/' + volume['name'])
+                        print('Format /dev/' + volume['name'] + ' as EXT4')
         else:
             print('The ' + volume['name'] +' is mounted. Skipping!')
 
@@ -87,127 +84,177 @@ def mount_volumes(hostname):
     print('=' * 40)
 
     print('Mounting /dev/nvme0n1p2 at SWAP')
-#    os.system('swapon /dev/nvme0n1p2')
-    print('Mounting /dev/nvme0n1p3 at /mnt')
-#    os.system('mount /dev/nvme0n1p3 /mnt')
-    print('Creating /mnt/boot')
-#    os.mkdir('/mnt/boot')
-    print('Mounting /dev/nvme0n1p1 at /mnt/boot')
-#    os.system('mount /dev/nvme0n1p1 /mnt/boot')
-    print('Creating /mnt/var')
-#    os.mkdir('/mnt/var')
-    print('Mounting /dev/nvme0n1p4 at /mnt/boot')
-#    os.system('mount /dev/nvme0n1p4 /mnt/var')
-    print('Creating /mnt/tmp')
-#    os.mkdir('/mnt/tmp', 0o777)
-    print('Mounting /dev/nvme0n1p5 at /mnt/tmp')
-#    os.system('mount /dev/nvme0n1p5 /mnt/tmp')
-    print('Creating /mnt/home')
-#    os.mkdir('/mnt/home')
-    print('Mounting /dev/nvme0n1p6 at /mnt/home')
-#    os.system('mount /dev/nvme0n1p6 /mnt/home')
-    print('Creating /mnt/mnt/' + hostname)
-#    os.makedirs('/mnt/mnt/' + hostname)
-    print('Mounting /dev/nvme0n1p7 at /mnt/mnt/' + hostname)
-#    os.system('mount /dev/nvme0n1p7 /mnt/mnt/' + hostname)
+    os.system('swapon /dev/nvme0n1p2')
+    print('\nMounting /dev/nvme0n1p3 at /mnt')
+    os.system('mount /dev/nvme0n1p3 /mnt')
+
+    dirs = ['boot', 'var', 'tmp', 'home', hostname]
+    for dir in dirs:
+        match dir:
+            case 'boot':
+                path = '/mnt/boot'
+                print('\nCreating ' + path)
+                os.makedirs(path, exist_ok=True)
+                print('Mounting /dev/nvme0n1p1 at ' + path)
+                os.system('mount /dev/nvme0n1p1 ' + path)
+            case 'var':
+                path = '/mnt/var'
+                print('\nCreating ' + path)
+                os.makedirs(path, exist_ok=True)
+                print('Mounting /dev/nvme0n1p4 at ' + path)
+                os.system('mount /dev/nvme0n1p4 ' + path)
+            case 'tmp':
+                path = '/mnt/tmp'
+                print('\nCreating ' + path)
+                os.makedirs(path, exist_ok=True, mode=0o777)
+                print('Mounting /dev/nvme0n1p5 at ' + path)
+                os.system('mount /dev/nvme0n1p5 ' + path)
+            case 'home':
+                path = '/mnt/home'
+                print('\nCreating ' + path)
+                os.makedirs(path, exist_ok=True)
+                print('Mounting /dev/nvme0n1p6 at ' + path)
+                os.system('mount /dev/nvme0n1p6 ' + path)
+            case _:
+                path = '/mnt/mnt/' + hostname
+                print('\nCreating ' + path)
+                os.makedirs(path, exist_ok=True)
+                print('Mounting /dev/nvme0n1p7 at ' + path)
+                os.system('mount /dev/nvme0n1p7 ' + path)
 
 
-# PACSTRAP
+# PACSTRAP & Configuration
 def pacstrap(hostname):
 
     print('=' * 40)
-    print('PACSTRAP:')
+    print('PACSTRAP & Configuration:')
     print('=' * 40)
 
-    print('Install base packages')
-#    os.system('pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-firmware python neovim nfs-utils dkms bash-completion man openssh rsync reflector terminus-font')
-
-    if input('\nChoose ucode type: 1 - AMD, 2 - Intel? [1 - default] ').lower() == '2':
-        print('Installing intel-ucode')
-#        os.system('pacstrap /mnt intel-ucode')
-        ucode = 'intel-ucode.img'
+    if input('Choose ucode type: 1 - AMD, 2 - Intel? [1 - default] ').lower() == '2':
+        ucode = 'intel-ucode'
     else:
-        print('Install amd-ucode')
-#        os.system('pacstrap /mnt amd-ucode')
-        ucode = 'amd-ucode.img'
+        ucode = 'amd-ucode'
 
-    print('\nGenerate /etc/fstab')
-#    os.system('genfstab -U /mnt >> /mnt/etc/fstab')
+    print('Installing base packages')
+    os.system('pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-firmware python neovim nfs-utils dkms bash-completion man openssh rsync reflector terminus-font wget ' + ucode)
 
-    print('Arch-Chroot /mnt')
-#    os.system('arch-chroot /mnt')
+    print('\nGenerating /etc/fstab')
+    os.system('genfstab -U /mnt >> /mnt/etc/fstab')
 
-    print('Link /etc/localtime')
-#    os.system('ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime')
+    print('\nLinking /etc/localtime to Moscow')
+    os.system('arch-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime')
 
-    print('Sync hardware clock')
-#    os.system('hwclock --systohc')
+    print('\nSyncing hardware clock')
+    os.system('arch-chroot /mnt hwclock --systohc')
 
-    print('Mount vfxserver01/Tools at /mnt')
-#    os.system('mount -t nfs 192.168.20.11:/mnt/vfxserver01/Tools /mnt')
+    print('\nSetting up locale')
+    with open('/mnt/etc/locale.conf', 'w') as f:
+        f.write('LANG=ru_RU.UTF-8\n')
 
-    print('Setup locale to ru_RU.UTF-8')
-#    os.system('cp -v /mnt/_configuration_files/etc/locale* /etc')
-#    os.system('cp -v /mnt/_configuration_files/etc/vconsole.conf /etc')
-#    locale-gen
+    with open('/mnt/etc/locale.gen', 'r+') as f:
+        data = f.read()
+        data = data.replace('#ru_RU.UTF-8', 'ru_RU.UTF-8')
 
-    print('Setup hostname')
-#    with open('/etc/hostname', 'w') as f:
-#        f.write(hostname)
+        f.seek(0)
+        f.write(data)
+        f.truncate()
+    
+    os.system('arch-chroot /mnt locale-gen')
 
-    print('Setup /etc/modprobe.d/blacklist.conf')
-#    os.system('cp -v /mnt/_configuration_files/etc/modprobe.d/blacklist.conf /etc')
+    print('\nSetting up /etc/vconsole.conf')
+    with open('/mnt/etc/vconsole.conf', 'w') as f:
+        f.write('KEYMAP=ru\n')
+        f.write('FONT=ter-v20b\n')
 
-    print('Setup /etc/systemd/system/systemd-networkd.service')
-#    os.system('cp -v /mnt/_configuration_files/etc/systemd/network/20-wired.network /etc/systemd/network')
-#    os.system('systemctl enable systemd-networkd.service')
+    print('\nSetting up /etc/hostname')
+    with open('/mnt/etc/hostname', 'w') as f:
+        f.write(hostname + '\n')
 
-    print('Setup /etc/systemd/system/systemd-resolved.service')
-#    os.system('systemctl enable systemd-resolved.service')
+    print('\nSetting up /etc/hosts')
+    with open('/mnt/etc/hosts', 'a') as f:
+        f.write('\n127.0.0.1\tlocalhost'.expandtabs())
+        f.write('\n::1\t\tlocalhost'.expandtabs())
+        f.write(('\n127.0.1.1\t' + hostname + '.local\t\t' + hostname + '\n').expandtabs())
+        f.write('\n192.168.20.10\tvfxcache01.local\tvfxcache01'.expandtabs())
+        f.write('\n192.168.20.11\tvfxserver01.local\tvfxserver01'.expandtabs())
+        f.write('\n192.168.20.12\tvfxstorage01.local\tvfxstorage01'.expandtabs())
+        f.write('\n192.168.20.13\tvfxstorage02.local\tvfxstorage02\n'.expandtabs())
 
-    print('Setup /etc/systemd/system/sshd.service')
-#    os.system('systemctl enable sshd.service')
+    print('\nSetting up /etc/modprobe.d/blacklist.conf')
+    with open('/mnt/etc/modprobe.d/blacklist.conf', 'w') as f:
+        f.write('blacklist nouveau\n')
+        f.write('options nouveau modeset=0\n')
 
-    print('Setup /etc/systemd/system/systemd-timesyncd.service')
-#    os.system('cp -v /mnt/_configuration_files/etc/systemd/timesyncd.conf /etc/systemd')
+    print('\nSetting up systemd services')
+    with open('/mnt/etc/systemd/network/20-wired.network', 'w') as f:
+        f.write('[Match]\n')
+        f.write('Name=enp4*\n\n')
+        f.write('[Network]\n')
+        f.write('DHCP=yes\n')
+    os.system('arch-chroot /mnt systemctl enable systemd-networkd.service')
+    os.system('arch-chroot /mnt systemctl enable systemd-resolved.service')
+    os.system('arch-chroot /mnt systemctl enable sshd.service')
 
-    print('Setup /etc/pacman.d/mirrorlist via Reflector')
-#    os.system('reflector -c Russia --sort rate --save /etc/pacman.d/mirrorlist')
+    with open('/mnt/etc/systemd/timesyncd.conf', 'r+') as f:
+        data = f.read()
+        data = data.replace('#NTP=', 'NTP=192.168.20.1')
 
-    print('Set root password')
-#    os.system('passwd')
+        f.seek(0)
+        f.write(data)
+        f.truncate()
+    os.system('arch-chroot /mnt systemctl enable systemd-timesyncd.service')
 
-    print('Setup bootloader')
-#    os.system('bootctl install')
-#    os.system('cp -v /mnt/_configuration_files/boot/loader/loader.conf /boot/loader')
+    print('\nSetting up /etc/pacman.d/mirrorlist via Reflector')
+    with open('/mnt/etc/pacman.conf', 'r+') as f:
+        data = f.read()
+        data = data.replace('#Color', 'Color')
+        data = data.replace('#ParallelDownloads', 'ParallelDownloads')
+
+        f.seek(0)
+        f.write(data)
+        f.truncate()
+    os.system('arch-chroot /mnt reflector -c Russia --sort rate --latest 5 --save /etc/pacman.d/mirrorlist')
+ 
+
+
+
+    print('\nSetting root password')
+    os.system('arch-chroot /mnt passwd')
+
+    print('Setting up systemd-boot')
+    os.system('arch-chroot /mnt bootctl install')
 
     blkid = subprocess.check_output('blkid').decode('UTF-8').splitlines()
     uuid = ''
     for line in blkid:
-        if line.find('nvme0n1p3'):
+        if 'nvme0n1p3' in line:
             uuid = line.split()[1]
             break
 
-#    with open('/boot/loader/entries/arch.conf', 'w') as f:
-#        f.write('title   Arch Linux\n')
-#        f.write('linux   /vmlinuz-linux-lts\n')
-#        f.write('initrd  /initramfs-linux-lts.img\n')
-#        f.write('initrd  /' + ucode + '\n')
-#        f.write('options root=' + uuid + ' rw nowatchdog loglevel=3 nvidia_drm.modeset=1')
+    with open('/mnt/boot/loader/loader.conf', 'w') as f:
+        f.write('timeout 3\n')
+        f.write('console-mode max\n')
+        f.write('default arch*\n')
 
-    print('Copy setup_vfxstation.py to /root')
-#    os.system('cp -v /mnt/_shell_tools/setup_vfxstation.py /root')
+    with open('/mnt/boot/loader/entries/arch.conf', 'w') as f:
+        f.write('title   Arch Linux\n')
+        f.write('linux   /vmlinuz-linux-lts\n')
+        f.write('initrd  /initramfs-linux-lts.img\n')
+        f.write('initrd  /' + ucode + '.img\n')
+        f.write('options root=' + uuid + ' rw nowatchdog loglevel=3 nvidia_drm.modeset=1\n')
 
-    print('Unmount /mnt/vfxserver01')
-#    os.system('umount /mnt')
+    print('\nCopy setup_vfxstation.py to /root')
+    os.system('arch-chroot /mnt wget https://github.com/ialebedev/shell_tools/blob/main/setup_vfxstation.py -P /root')
+    os.chmod('/mnt/root/setup_vfxstation.py', stat.S_IRWXU)
 
-    print('Exit')
-#    os.system('exit')
+    print('\nSetting up /etc/resolv.conf')
+    with open('/mnt/etc/resolv.conf', 'a') as f:
+        f.write('\nnameserver 192.168.20.1\n')
 
-    print('Unmount /mnt')
-#    os.system('umount -R /mnt')
+    print('\nUnmountting /mnt')
+    os.system('umount -R /mnt')
 
-    print('\nFinished!\nSystem ready to reboot.')
+    print('\nFinished!\n\nSystem ready to reboot.')
 
 
 # MAIN
@@ -228,7 +275,7 @@ def main ():
     if input('\nMount disks? [y/N] ').lower() == 'y':
         mount_volumes(hostname)
         
-    if input('\nStart pacstrap? [y/N]: ').lower() == 'y':
+    if input('\nStart pacstrap and configuration? [y/N]: ').lower() == 'y':
         pacstrap(hostname)
 
 if __name__ == '__main__':
