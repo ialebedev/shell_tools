@@ -214,9 +214,6 @@ def pacstrap(hostname):
         f.write(data)
         f.truncate()
     os.system('arch-chroot /mnt reflector -c Russia --sort rate --latest 5 --save /etc/pacman.d/mirrorlist')
- 
-
-
 
     print('\nSetting root password')
     os.system('arch-chroot /mnt passwd')
