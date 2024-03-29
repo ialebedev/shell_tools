@@ -241,7 +241,7 @@ def pacstrap(hostname):
         f.write('options root=' + uuid + ' rw nowatchdog loglevel=3 nvidia_drm.modeset=1\n')
 
     print('\nCopy setup_vfxstation.py to /root')
-    os.system('arch-chroot /mnt wget https://github.com/ialebedev/shell_tools/blob/main/setup_vfxstation.py -P /root')
+    os.system('arch-chroot /mnt wget https://raw.githubusercontent.com/ialebedev/shell_tools/main/setup_vfxstation.py -P /root')
     os.chmod('/mnt/root/setup_vfxstation.py', stat.S_IRWXU)
 
     print('\nSetting up /etc/resolv.conf')
