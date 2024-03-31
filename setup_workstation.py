@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, stat, sys, subprocess
+import os, stat, sys, subprocess, time
 
 
 # DISKs INFO
@@ -137,9 +137,11 @@ def pacstrap(hostname):
 
     print('Installing base packages')
     os.system('pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-firmware python neovim nfs-utils dkms bash-completion man openssh rsync reflector terminus-font wget ' + ucode)
+    time.sleep(1)
 
     print('\nGenerating /etc/fstab')
     os.system('genfstab -U /mnt >> /mnt/etc/fstab')
+    time.sleep(1)
 
     print('\nLinking /etc/localtime to Moscow')
     os.system('arch-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime')
