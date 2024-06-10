@@ -136,7 +136,7 @@ def pacstrap(hostname):
         ucode = 'amd-ucode'
 
     print('Installing base packages')
-    os.system('pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-firmware python neovim nfs-utils dkms bash-completion man openssh rsync reflector terminus-font wget ' + ucode)
+    os.system('pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-firmware python helix nfs-utils dkms bash-completion man openssh rsync reflector terminus-font wget ' + ucode)
 
     print('\nGenerating /etc/fstab')
     os.system('genfstab -U /mnt >> /mnt/etc/fstab')
