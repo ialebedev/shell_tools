@@ -188,7 +188,7 @@ def pacstrap(hostname):
     print('\nSetting up systemd services')
     with open('/mnt/etc/systemd/network/20-wired.network', 'w') as f:
         f.write('[Match]\n')
-        f.write('Name=enp4*\n\n')
+        f.write('Name=enp*\n\n')
         f.write('[Network]\n')
         f.write('DHCP=yes\n')
     os.system('arch-chroot /mnt systemctl enable systemd-networkd.service')
