@@ -3,7 +3,7 @@
 # pipx install zfslib
 
 import os, subprocess, time
-import zfslib as zfs
+#import zfslib as zfs
 
 GREEN = '\u001b[38;5;46m'
 RESET = '\u001b[0m'
