@@ -17,12 +17,18 @@ def setup_automount ():
 
     if not os.path.exists('/mnt/vfxstorage02'):
         os.mkdir('/mnt/vfxstorage02', 0o755)
+        
+    if not os.path.exists('/mnt/vfxserver02'):
+        os.mkdir('/mnt/vfxserver02', 0o755)
+        
+    if not os.path.exists('/mnt/vfxcache02'):
+        os.mkdir('/mnt/vfxcache02', 0o755)
 
-    os.system('mount -t nfs 192.168.20.11:/mnt/vfxserver01 /mnt/vfxserver01')
-    os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/mnt-* /etc/systemd/system/')
+    os.system('mount -t nfs 192.168.20.15:/mnt/vfxserver02 /mnt/vfxserver02')
+    os.system('cp -v /mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/mnt-* /etc/systemd/system/')
     time.sleep(1)
 
-    os.system('umount /mnt/vfxserver01')
+    os.system('umount /mnt/vfxserver02')
     time.sleep(1)
 
     os.system('systemctl daemon-reload')
@@ -30,45 +36,11 @@ def setup_automount ():
     os.system('systemctl enable --now mnt-vfxserver01.mount')
     os.system('systemctl enable --now mnt-vfxstorage01.mount')
     os.system('systemctl enable --now mnt-vfxstorage02.mount')
+    os.system('systemctl enable --now mnt-vfxcache02.mount')
+    os.system('systemctl enable --now mnt-vfxserver02.mount')
     time.sleep(1)
 
     print('Setting up automount ... Done')
-
-# MOUNT PACMAN CACHE
-def setup_pacman_cache ():
-
-    path = '/var/cache/pacman/pkg'
-
-    if os.path.exists(path):
-        if input('Pacman cache directory is not empty. Do you want to clear it? [y/N]: ').lower() == 'y':
-            try:
-                shutil.rmtree(path)
-                time.sleep(1)
-                os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/var-* /etc/systemd/system/')
-                os.system('systemctl enable --now var-cache-pacman.mount')
-            except OSError as e:
-                print("Error: %s : %s" % (path, e.strerror))
-
-    time.sleep(1)
-    print('Setting up pacman cache ... Done')
-
-# SETUP HOSTS
-def setup_hosts ():
-
-    hostname = os.uname().nodename
-
-    os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/hosts /etc/')
-
-    with open('/etc/hosts', 'r') as file :
-        filedata = file.read()
-
-    filedata = filedata.replace('vfxhost', hostname)
-
-    with open('/etc/hosts', 'w') as file :
-        file.write(filedata)
-
-    time.sleep(1)
-    print('Setting up /etc/hosts ... Done')
 
 # SOFT
 def install_soft ():
@@ -85,12 +57,12 @@ def install_soft ():
         if not os.path.exists('/usr/lib/systemd/system/afrender.service'):
             if input('Setup afrender sevice? [y/N] ').lower() == 'y':
 
-                path = '/mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/afrender.service'
+                path = '/mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/afrender.service'
 
                 if os.path.exists(path):
                     try:
-                        os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/afrender.service /etc/systemd/system/')
-                        os.system('cp -v /mnt/vfxserver01/Tools/_configuration_files/etc/systemd/system/stop_hserver.service /etc/systemd/system/')
+                        os.system('cp -v /mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/afrender.service /etc/systemd/system/')
+                        os.system('cp -v /mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/stop_hserver.service /etc/systemd/system/')
                         os.system('systemctl enable afrender.service')
                         os.system('systemctl enable stop_hserver.service')
                         time.sleep(1)
@@ -115,18 +87,18 @@ def install_soft ():
 # LINKING SOFT
 def link_soft ():
 
-    os.symlink('/mnt/vfxserver01/Programs', '/soft')
+    os.symlink('/mnt/vfxserver02/Programs', '/soft')
 
     os.remove('/etc/skel/.bashrc')
-    os.symlink('/mnt/vfxserver01/Tools/_user_preferences/bashrc', '/etc/skel/.bashrc')
+    os.symlink('/mnt/vfxserver02/Tools/_user_preferences/bashrc', '/etc/skel/.bashrc')
 
     # Nuke Preferences
     os.mkdir('/etc/skel/.nuke')
-    os.symlink('/mnt/vfxserver01/Tools/Nuke/menu.py', '/etc/skel/.nuke/menu.py')
-    os.symlink('/mnt/vfxserver01/Tools/Nuke/init.py', '/etc/skel/.nuke/init.py')
+    os.symlink('/mnt/vfxserver02/Tools/Nuke/menu.py', '/etc/skel/.nuke/menu.py')
+    os.symlink('/mnt/vfxserver02/Tools/Nuke/init.py', '/etc/skel/.nuke/init.py')
 
     # Houdini Preferences
-    os.symlink('/mnt/vfxserver01/Tools/_user_preferences/sesi_licenses.pref', '/etc/skel/.sesi_licenses.pref')
+    os.symlink('/mnt/vfxserver02/Tools/_user_preferences/sesi_licenses.pref', '/etc/skel/.sesi_licenses.pref')
 
     # Soft
     os.mkdir('/etc/opt')
@@ -136,12 +108,12 @@ def link_soft ():
     os.symlink('/soft/OFX', '/usr/OFX')
     os.symlink('/soft/houdini', '/opt/houdini')
     os.symlink('/soft/foundry', '/usr/local/foundry')
-    os.symlink('/soft/nuke/Nuke15.0v2', '/usr/local/Nuke15.0v2')
+    os.symlink('/soft/nuke/Nuke15.1v3', '/usr/local/Nuke15.1v3')
 
     # Additional links
     os.symlink('/lib/libidn.so.12', '/lib/libidn.so.11')
     os.symlink('/lib/libcrypt.so.2', '/lib/libcrypt.so.1')
-    os.symlink('/lib/libpython3.12.so.1.0', '/lib/libpython3.9.so.1.0')
+    os.symlink('/lib/libpython3.13.so.1.0', '/lib/libpython3.9.so.1.0')
 
 
     time.sleep(1)
@@ -205,7 +177,7 @@ def create_base_directories ():
 # MENU ICONS
 def create_icons ():
 
-    icons_path = '/mnt/vfxserver01/Tools/_configuration_files/usr/share/applications/'
+    icons_path = '/mnt/vfxserver02/Tools/_configuration_files/usr/share/applications/'
 
     if os.path.exists(icons_path):
 
@@ -231,12 +203,6 @@ def main ():
 
     if input('Setup automount? [y/N]: ').lower() == 'y':
         setup_automount()
-
-    if input('Setup pacman cache directory? [y/N] ').lower() == 'y':
-        setup_pacman_cache()
-
-    if input('Setup /etc/hosts? [y/N] ').lower() == 'y':
-        setup_hosts()
 
     if input('Install software? [y/N] ').lower() == 'y':
         install_soft()

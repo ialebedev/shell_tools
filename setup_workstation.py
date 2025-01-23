@@ -178,7 +178,9 @@ def pacstrap(hostname):
         f.write('\n192.168.20.10\tvfxcache01.local\tvfxcache01'.expandtabs())
         f.write('\n192.168.20.11\tvfxserver01.local\tvfxserver01'.expandtabs())
         f.write('\n192.168.20.12\tvfxstorage01.local\tvfxstorage01'.expandtabs())
-        f.write('\n192.168.20.13\tvfxstorage02.local\tvfxstorage02\n'.expandtabs())
+        f.write('\n192.168.20.13\tvfxstorage02.local\tvfxstorage02'.expandtabs())
+        f.write('\n192.168.20.14\tvfxcache02.local\tvfxcache02'.expandtabs())
+        f.write('\n192.168.20.15\tvfxserver02.local\tvfxserver02\n'.expandtabs())
 
     print('\nSetting up /etc/modprobe.d/blacklist.conf')
     with open('/mnt/etc/modprobe.d/blacklist.conf', 'w') as f:
@@ -213,7 +215,7 @@ def pacstrap(hostname):
         f.seek(0)
         f.write(data)
         f.truncate()
-    os.system('arch-chroot /mnt reflector -l 10 -p https --sort rate --save /etc/pacman.d/mirrorlist')
+    os.system('arch-chroot /mnt reflector -l 5 -p https --sort rate --save /etc/pacman.d/mirrorlist')
 
     print('\nSetting root password')
     os.system('arch-chroot /mnt passwd')
