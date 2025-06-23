@@ -32,9 +32,9 @@ def setup_automount ():
     time.sleep(1)
 
     os.system('systemctl daemon-reload')
-    os.system('systemctl enable --now mnt-vfxcache01.mount')
-    os.system('systemctl enable --now mnt-vfxserver01.mount')
-    os.system('systemctl enable --now mnt-vfxstorage01.mount')
+    # os.system('systemctl enable --now mnt-vfxcache01.mount')
+    # os.system('systemctl enable --now mnt-vfxserver01.mount')
+    # os.system('systemctl enable --now mnt-vfxstorage01.mount')
     os.system('systemctl enable --now mnt-vfxstorage02.mount')
     os.system('systemctl enable --now mnt-vfxcache02.mount')
     os.system('systemctl enable --now mnt-vfxserver02.mount')
