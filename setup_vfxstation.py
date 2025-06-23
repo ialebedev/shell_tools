@@ -137,6 +137,14 @@ def setup_trim_and_sensors ():
     time.sleep(1)
     print("Enabling TRIM and lm_sensors ... Done")
 
+# BLOCK USB MOUNT FOR USERS
+def block_mount ():
+
+    os.system('cp -v /mnt/vfxserver02/Tools/_configuration_files/etc/polkit-1/rules.d/10-usb-mount.rules /etc/polkit-1/rules.d/')
+
+    time.sleep(1)
+    print("Blocking USB mount for regular users ... Done")
+
 # USERS
 def create_users ():
 
@@ -217,6 +225,9 @@ def main ():
     if input('Enable TRIM and lm_sensors? [y/N] ').lower() == 'y':
         setup_trim_and_sensors()
 
+    if input('Disable USB mount for regular users? [y/N] ').lower() == 'y':
+        block_mount()
+        
     if input('Create users? [y/N] ').lower() == 'y':
         create_users()
 
