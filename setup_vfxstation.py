@@ -77,7 +77,8 @@ def install_soft ():
 
         f = open('/etc/sddm.conf', 'w')
         f.write('[Theme]\nCurrent=breeze\n\n')
-        f.write('[Users]\nMaximumUid=99999\nMinimumUid=99999')
+        f.write('[Users]\nMaximumUid=99999\nMinimumUid=99999\n\n')
+        f.write('[General]\nDisplayServer=x11\n')
         f.close()
 
         os.system('systemctl enable sddm')
