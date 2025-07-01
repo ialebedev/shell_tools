@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, stat, sys, subprocess
+import os
+import stat
+import sys
+import subprocess
 
 
 # DISKs INFO
@@ -45,7 +48,7 @@ def format_volumes(vols):
 
     # Check for mounted VOLUMEs
     for volume in vols:
-        if volume['mountpoint'] != None:
+        if volume['mountpoint'] is not None:
             if input('\nWARNING! Some volumes are mounted. Continue? [y/N] ').lower() == 'y':
                 break
             else:
@@ -57,7 +60,7 @@ def format_volumes(vols):
     print('=' * 40)
 
     for volume in vols:
-        if volume['mountpoint'] == None:
+        if volume['mountpoint'] is None:
             match volume['name']:
                 case 'nvme0n1p1':
                     if input('Format /dev/nvme0n1p1? [y/N] ').lower() == 'y':
@@ -141,30 +144,30 @@ def pacstrap(hostname):
     print('\nGenerating /etc/fstab')
     os.system('genfstab -U /mnt >> /mnt/etc/fstab')
 
-    print('\nLinking /etc/localtime to Moscow')
-    os.system('arch-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime')
+    # print('\nLinking /etc/localtime to Moscow')
+    # os.system('arch-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime')
 
-    print('\nSyncing hardware clock')
-    os.system('arch-chroot /mnt hwclock --systohc')
+    # print('\nSyncing hardware clock')
+    # os.system('arch-chroot /mnt hwclock --systohc')
 
-    print('\nSetting up locale')
-    with open('/mnt/etc/locale.conf', 'w') as f:
-        f.write('LANG=ru_RU.UTF-8\n')
+    # print('\nSetting up locale')
+    # with open('/mnt/etc/locale.conf', 'w') as f:
+    #     f.write('LANG=ru_RU.UTF-8\n')
 
-    with open('/mnt/etc/locale.gen', 'r+') as f:
-        data = f.read()
-        data = data.replace('#ru_RU.UTF-8', 'ru_RU.UTF-8')
+    # with open('/mnt/etc/locale.gen', 'r+') as f:
+    #     data = f.read()
+    #     data = data.replace('#ru_RU.UTF-8', 'ru_RU.UTF-8')
 
-        f.seek(0)
-        f.write(data)
-        f.truncate()
+    #     f.seek(0)
+    #     f.write(data)
+    #     f.truncate()
     
-    os.system('arch-chroot /mnt locale-gen')
+    # os.system('arch-chroot /mnt locale-gen')
 
-    print('\nSetting up /etc/vconsole.conf')
-    with open('/mnt/etc/vconsole.conf', 'w') as f:
-        f.write('KEYMAP=ru\n')
-        f.write('FONT=ter-v20b\n')
+    # print('\nSetting up /etc/vconsole.conf')
+    # with open('/mnt/etc/vconsole.conf', 'w') as f:
+    #     f.write('KEYMAP=ru\n')
+    #     f.write('FONT=ter-v20b\n')
 
     print('\nSetting up /etc/hostname')
     with open('/mnt/etc/hostname', 'w') as f:
@@ -206,16 +209,16 @@ def pacstrap(hostname):
         f.truncate()
     os.system('arch-chroot /mnt systemctl enable systemd-timesyncd.service')
 
-    print('\nSetting up /etc/pacman.d/mirrorlist via Reflector')
-    with open('/mnt/etc/pacman.conf', 'r+') as f:
-        data = f.read()
-        data = data.replace('#Color', 'Color')
-        data = data.replace('#ParallelDownloads', 'ParallelDownloads')
+    # print('\nSetting up /etc/pacman.d/mirrorlist via Reflector')
+    # with open('/mnt/etc/pacman.conf', 'r+') as f:
+    #     data = f.read()
+    #     data = data.replace('#Color', 'Color')
+    #     data = data.replace('#ParallelDownloads', 'ParallelDownloads')
 
-        f.seek(0)
-        f.write(data)
-        f.truncate()
-    os.system('arch-chroot /mnt reflector -l 5 -p https --sort rate --save /etc/pacman.d/mirrorlist')
+    #     f.seek(0)
+    #     f.write(data)
+    #     f.truncate()
+    # os.system('arch-chroot /mnt reflector -l 5 -p https --sort rate --save /etc/pacman.d/mirrorlist')
 
     print('\nSetting root password')
     os.system('arch-chroot /mnt passwd')
