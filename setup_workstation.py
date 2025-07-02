@@ -129,6 +129,8 @@ def mount_volumes(hostname):
 # PACSTRAP & Configuration
 def pacstrap(hostname):
 
+    os.system('reflector -l 5 -c Russia --sort rate --save /etc/pacman.d/mirrorlist')
+    
     print('=' * 40)
     print('PACSTRAP & Configuration:')
     print('=' * 40)
@@ -236,7 +238,8 @@ def pacstrap(hostname):
     with open('/mnt/boot/loader/loader.conf', 'w') as f:
         f.write('timeout 3\n')
         f.write('console-mode max\n')
-        f.write('default arch*\n')
+        f.write('editor yes\n')
+        f.write('default arch.conf\n')
 
     with open('/mnt/boot/loader/entries/arch.conf', 'w') as f:
         f.write('title   Arch Linux\n')
@@ -245,6 +248,13 @@ def pacstrap(hostname):
         f.write('initrd  /' + ucode + '.img\n')
         f.write('options root=' + uuid + ' rw nowatchdog loglevel=3 nvidia_drm.modeset=1\n')
 
+    with open('/mnt/boot/loader/entries/arch-fallback.conf', 'w') as f:
+        f.write('title   Arch Linux (fallback)\n')
+        f.write('linux   /vmlinuz-linux-lts\n')
+        f.write('initrd  /initramfs-linux-lts-fallback.img\n')
+        f.write('initrd  /' + ucode + '.img\n')
+        f.write('options root=' + uuid + ' rw nowatchdog\n')
+        
     print('\nCopy setup_vfxstation.py to /root')
     os.system('arch-chroot /mnt wget https://raw.githubusercontent.com/ialebedev/shell_tools/main/setup_vfxstation.py -P /root')
     os.chmod('/mnt/root/setup_vfxstation.py', stat.S_IRWXU)
