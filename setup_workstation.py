@@ -145,32 +145,7 @@ def pacstrap(hostname):
 
     print('\nGenerating /etc/fstab')
     os.system('genfstab -U /mnt >> /mnt/etc/fstab')
-
-    # print('\nLinking /etc/localtime to Moscow')
-    # os.system('arch-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime')
-
-    # print('\nSyncing hardware clock')
-    # os.system('arch-chroot /mnt hwclock --systohc')
-
-    # print('\nSetting up locale')
-    # with open('/mnt/etc/locale.conf', 'w') as f:
-    #     f.write('LANG=ru_RU.UTF-8\n')
-
-    # with open('/mnt/etc/locale.gen', 'r+') as f:
-    #     data = f.read()
-    #     data = data.replace('#ru_RU.UTF-8', 'ru_RU.UTF-8')
-
-    #     f.seek(0)
-    #     f.write(data)
-    #     f.truncate()
-    
-    # os.system('arch-chroot /mnt locale-gen')
-
-    # print('\nSetting up /etc/vconsole.conf')
-    # with open('/mnt/etc/vconsole.conf', 'w') as f:
-    #     f.write('KEYMAP=ru\n')
-    #     f.write('FONT=ter-v20b\n')
-
+        
     print('\nSetting up /etc/hostname')
     with open('/mnt/etc/hostname', 'w') as f:
         f.write(hostname + '\n')
@@ -202,6 +177,7 @@ def pacstrap(hostname):
     os.system('arch-chroot /mnt systemctl enable systemd-resolved.service')
     os.system('arch-chroot /mnt systemctl enable sshd.service')
 
+    print('\nSetting up /etc/systemd/timesyncd.conf')
     with open('/mnt/etc/systemd/timesyncd.conf', 'r+') as f:
         data = f.read()
         data = data.replace('#NTP=', 'NTP=192.168.20.1')
@@ -209,18 +185,16 @@ def pacstrap(hostname):
         f.seek(0)
         f.write(data)
         f.truncate()
-    os.system('arch-chroot /mnt systemctl enable systemd-timesyncd.service')
+        
+    print('\nSetting up /etc/pacman.conf')
+    with open('/mnt/etc/pacman.conf', 'r+') as f:
+        data = f.read()
+        data = data.replace('#Color', 'Color')
+        data = data.replace('#ParallelDownloads', 'ParallelDownloads')
 
-    # print('\nSetting up /etc/pacman.d/mirrorlist via Reflector')
-    # with open('/mnt/etc/pacman.conf', 'r+') as f:
-    #     data = f.read()
-    #     data = data.replace('#Color', 'Color')
-    #     data = data.replace('#ParallelDownloads', 'ParallelDownloads')
-
-    #     f.seek(0)
-    #     f.write(data)
-    #     f.truncate()
-    # os.system('arch-chroot /mnt reflector -l 5 -p https --sort rate --save /etc/pacman.d/mirrorlist')
+        f.seek(0)
+        f.write(data)
+        f.truncate()
 
     print('\nSetting root password')
     os.system('arch-chroot /mnt passwd')

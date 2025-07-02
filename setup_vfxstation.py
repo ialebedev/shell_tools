@@ -1,7 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, shutil, time
+import os
+import time
+
+# TIMEZONE
+def setup_timezone ():
+
+    os.system('timedatectl set-timezone Europe/Moscow')
+    os.system('hwclock --systohc')
+    time.sleep(1)
+    
+# LOCALE
+def setup_locale ():
+
+    os.system('localectl set-locale LANG=ru_RU.UTF-8')
+    os.system('localectl set-x11-keymap ru,us pc105 "" grp:alt_shift_toggle')
+    os.system('echo FONT=ter-v20b >> /etc/vconsole.conf')
+    time.sleep(1)
 
 # MOUNT SERVERS
 def setup_automount ():
@@ -44,6 +60,9 @@ def setup_automount ():
 
 # SOFT
 def install_soft ():
+
+    # REFLECTOR
+    os.system('reflector -l 5 -c Russia --sort rate --save /etc/pacman.d/mirrorlist')
 
     # COMMON SOFT
     os.system('pacman -S --needed --noconfirm sudo man tmux rsync bash-completion exfat-utils ntfs-3g unrar unzip p7zip dkms duf htop eza bat yazi zoxide fzf util-linux ethtool numactl')
@@ -210,6 +229,12 @@ def create_icons ():
 # MAIN
 def main ():
 
+    if input('Setup timezone? [y/N]: ').lower() == 'y':
+        setup_timezone()
+        
+    if input('Setup locale? [y/N]: ').lower() == 'y':
+        setup_locale()
+        
     if input('Setup automount? [y/N]: ').lower() == 'y':
         setup_automount()
 
