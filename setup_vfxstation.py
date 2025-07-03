@@ -7,7 +7,17 @@ import time
 # TIMEZONE
 def setup_timezone ():
 
+    print('\nSetting up /etc/systemd/timesyncd.conf')
+    with open('/mnt/etc/systemd/timesyncd.conf', 'r+') as f:
+        data = f.read()
+        data = data.replace('#NTP=', 'NTP=192.168.20.1')
+
+        f.seek(0)
+        f.write(data)
+        f.truncate()
+
     os.system('timedatectl set-timezone Europe/Moscow')
+    os.system('timedatectl set-ntp true')
     os.system('hwclock --systohc')
     time.sleep(1)
     

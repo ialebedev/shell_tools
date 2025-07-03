@@ -176,16 +176,7 @@ def pacstrap(hostname):
     os.system('arch-chroot /mnt systemctl enable systemd-networkd.service')
     os.system('arch-chroot /mnt systemctl enable systemd-resolved.service')
     os.system('arch-chroot /mnt systemctl enable sshd.service')
-
-    print('\nSetting up /etc/systemd/timesyncd.conf')
-    with open('/mnt/etc/systemd/timesyncd.conf', 'r+') as f:
-        data = f.read()
-        data = data.replace('#NTP=', 'NTP=192.168.20.1')
-
-        f.seek(0)
-        f.write(data)
-        f.truncate()
-        
+            
     print('\nSetting up /etc/pacman.conf')
     with open('/mnt/etc/pacman.conf', 'r+') as f:
         data = f.read()
