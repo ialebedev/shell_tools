@@ -8,7 +8,7 @@ import time
 def setup_timezone ():
 
     print('\nSetting up /etc/systemd/timesyncd.conf')
-    with open('/mnt/etc/systemd/timesyncd.conf', 'r+') as f:
+    with open('/etc/systemd/timesyncd.conf', 'r+') as f:
         data = f.read()
         data = data.replace('#NTP=', 'NTP=192.168.20.1')
 
