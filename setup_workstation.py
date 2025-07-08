@@ -228,6 +228,9 @@ def pacstrap(hostname):
     with open('/mnt/etc/resolv.conf', 'a') as f:
         f.write('\nnameserver 192.168.20.1\n')
 
+    print('\nSetting up /usr/local/bin/hx')
+    os.system('arch-chroot ln -s /usr/bin/helix /usr/local/bin/hx')
+    
     print('\nUnmountting /mnt')
     os.system('umount -R /mnt')
 
