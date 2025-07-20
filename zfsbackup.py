@@ -1,72 +1,46 @@
 #!/bin/env python
 
-# pipx install zfslib
+# uv add zfslib
 
-import os, subprocess, time
-#import zfslib as zfs
+import os
+import subprocess
 
-GREEN = '\u001b[38;5;46m'
-RESET = '\u001b[0m'
-
-def zfsbackup (host):
-
-    print("Started backup scenario for {}\t\t[".format(host) + GREEN + "  OK  " + RESET + "]")
-
-    match host:
-
-        case 'vfxcache01':
-            zfs_backup_vfxcache01()
-            
-        case 'vfx':
-            zfs_backup_vfxserver01()
-
-        case 'vfxstorage01':
-            zfs_backup_vfxstorage01()
-
-        case 'vfxstorage02':
-            zfs_backup_vfxstorage02()
-
-        case _:
-            print("No backup scenario for {}.".format(host))
+from colorama import Fore, Style
 
 
-# VFXCACHE01
-def zfs_backup_vfxcache01 ():
+def get_pools() -> []:
+    output = subprocess.run("zpool list", shell=True, capture_output=True, text=True)
+    lines = output.stdout.splitlines()
 
-    datasets = subprocess.check_output(['zfs', 'list']).decode('UTF-8').splitlines()
+    pools = [line.split()[0] for line in lines[1:]]
+    print(f"Found ZFS pools: {', '.join(pools)}")
 
+    return pools
 
-# VFXSERVER01
-def zfs_backup_vfxserver01 ():
+def get_datasets(pools: list[str]) -> list[str]:
+    for pool in pools:
+        output = subprocess.run("zfs list", shell=True, capture_output=True, text=True)
+        lines = output.stdout.splitlines()
 
-    #datasets = subprocess.check_output(['zfs', 'list']).decode('UTF-8').splitlines()
-    datasets = subprocess.Popen(['zfs', 'list'], stdout=subprocess.PIPE, close_fds=True)
+        datasets = [line.split()[0] for line in lines[1:]]
+        print(f"Found ZFS datasets: {', '.join(datasets)}")
+    
 
-    print(datasets)
+def zfsbackup(host):
+    print(
+        f"Starting backup scenario for {host}\t\t[ {Fore.GREEN} OK {Style.RESET_ALL} ]"
+    )
 
-
-# VFXSTORAGE01
-def zfs_backup_vfxstorage01 ():
-
-    datasets = subprocess.check_output(['zfs', 'list']).decode('UTF-8').splitlines()
-
-
-
-# VFXSTORAGE02
-def zfs_backup_vfxstorage02 ():
-
-    datasets = subprocess.check_output(['zfs', 'list']).decode('UTF-8').splitlines()
-
-
+    pools = get_pools()
+    datasets = get_datasets(pools)
+    
 
 # MAIN
-def main ():
-
+def main():
     HOSTNAME = os.uname()[1]
-#    HOSTNAME = 'vfxcache01'
 
     zfsbackup(HOSTNAME)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
