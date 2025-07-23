@@ -1,12 +1,11 @@
 #!/bin/env python
 
-# uv add zfslib
-
 import os
 import sys
 import subprocess
 
 from colorama import Fore, Style
+from datetime import date
 
 
 def message(message: str, status: bool):
@@ -32,20 +31,56 @@ def check_pool(pool: str) -> bool:
 
 def get_datasets(pool: str) -> list[str]:
     output = subprocess.run(
-        "zfs list -r " + pool, shell=True, capture_output=True, text=True
+        "zfs list -r " + pool + " | grep -v @",
+        shell=True,
+        capture_output=True,
+        text=True,
     )
     lines = output.stdout.splitlines()
 
     datasets = [line.split()[0] for line in lines[2:]]
     if datasets:
         message(f"Found datasets in {pool}", True)
-
-        # for dataset in datasets:
-        #     print(dataset)
     else:
         message(f"No datasets found in {pool}. Exit", False)
 
     return datasets
+
+
+def filter_datasets(datasets: list[str], keywords: list[str]) -> list[str]:
+    return [
+        dataset for dataset in datasets if not any(word in dataset for word in keywords)
+    ]
+
+
+def filter_datasets_for_backup(host: str, datasets: list[str]) -> list[str]:
+    match host:
+        case "vfxserver02":
+            datasets = filter_datasets(datasets, ["Caches", "Trash"])
+        case "vfxcache02":
+            datasets = filter_datasets(
+                datasets, ["Programs", "Projects", "Tools", "Trash"]
+            )
+        case _:
+            datasets = filter_datasets(datasets, ["Trash"])
+
+    message("Filtered datasets for backup", True)
+
+    return datasets
+
+
+def create_snapshots(datasets: list[str]) -> list[str]:
+    snapshots = []
+    for dataset in datasets:
+        snapshot = subprocess.run(
+            f"zfs snapshot {dataset}@{date.today()}",
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+        snapshots.append(snapshot)
+
+    return snapshots
 
 
 def zfsbackup(host):
@@ -54,13 +89,20 @@ def zfsbackup(host):
     if check_pool("zdata"):
         datasets = get_datasets("zdata")
     else:
-        sys.exit()        
+        sys.exit()
 
+    datasets = filter_datasets_for_backup(host, datasets)
+
+    snapshots = create_snapshots(datasets)
+
+    for dataset in datasets:
+        print(dataset)
 
 
 # MAIN
 def main():
     HOSTNAME = os.uname()[1]
+    HOSTNAME = "vfxserver02"
 
     zfsbackup(HOSTNAME)
 

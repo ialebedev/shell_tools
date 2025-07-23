@@ -17,20 +17,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "colorama" },
-    { name = "zfslib" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "colorama", specifier = ">=0.4.6" },
-    { name = "zfslib", specifier = ">=0.13.2" },
-]
-
-[[package]]
-name = "zfslib"
-version = "0.13.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/62/bf/463770473cecadfc3cb4c0e248b477f54779da30f69ae99e74aafeeba184/zfslib-0.13.2.tar.gz", hash = "sha256:bb350f00e8b1fb3e4c84559d91497bd80ba1dce34bb2d1b38db99ef7d2670f45", size = 15843, upload-time = "2024-05-28T15:22:23.852Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/49/6f/38a2cfd1dc504805a8017a6423f634fd8323d1be3bb6bcc4f6f8ea0d71a2/zfslib-0.13.2-py3-none-any.whl", hash = "sha256:18e53738ee97405cfd21dd35d3cba5dfeed08af29bc5cf96a32b7d85cac0304f", size = 15300, upload-time = "2024-05-28T15:22:22.682Z" },
-]
+requires-dist = [{ name = "colorama", specifier = ">=0.4.6" }]
