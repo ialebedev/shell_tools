@@ -5,7 +5,7 @@ import sys
 import subprocess
 
 from colorama import Fore, Style
-from datetime import date
+from datetime import datetime
 
 
 def message(message: str, status: bool):
@@ -72,13 +72,19 @@ def filter_datasets_for_backup(host: str, datasets: list[str]) -> list[str]:
 def create_snapshots(datasets: list[str]) -> list[str]:
     snapshots = []
     for dataset in datasets:
-        snapshot = subprocess.run(
-            f"zfs snapshot {dataset}@{date.today()}",
-            shell=True,
-            capture_output=True,
-            text=True,
-        )
-        snapshots.append(snapshot)
+        try:
+            snapshot = subprocess.run(
+                f"zfs snapshot {dataset}@{datetime.today().strftime('%Y.%m.%d_%H:%M:%S')}",
+                shell=True,
+                capture_output=True,
+                text=True,
+            )
+            snapshots.append(snapshot)
+        except Exception as error:
+            message(f"Failed to create snapshot for {dataset}", False)
+            print(f"Error: {error}")
+        else:
+            message(f"Created snapshot for {dataset}", True)
 
     return snapshots
 
@@ -95,8 +101,11 @@ def zfsbackup(host):
 
     snapshots = create_snapshots(datasets)
 
-    for dataset in datasets:
-        print(dataset)
+    # for dataset in datasets:
+    #     print(dataset)
+
+    # for snapshot in snapshots:
+    #     print(snapshot)
 
 
 # MAIN
