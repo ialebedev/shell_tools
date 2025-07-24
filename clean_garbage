@@ -1,10 +1,12 @@
 #!/bin/bash
 
 find ${1} -type f \( -name '._*' -o \
+                     -name '*~' -o \
                      -name '.DS_Store' -o \
                      -name '.nfs*' -o \
                      -iname '*.nk~*' -o \
                      -iname '*.nk.autosave' -o \
+                     -name '*_autosave_*' -o \
                      -name '*afanasy*' -o \
                      -iname '*.blend?' -o \
                      -name '*.mtl' \) -exec rm -fv {} +
