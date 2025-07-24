@@ -79,11 +79,11 @@ def create_snapshots(datasets: list[str]) -> list[str]:
                 capture_output=True,
                 text=True,
             )
-            snapshots.append(snapshot)
         except Exception as error:
             message(f"Failed to create snapshot for {dataset}", False)
             print(f"Error: {error}")
         else:
+            snapshots.append(snapshot)
             message(f"Created snapshot for {dataset}", True)
 
     return snapshots
@@ -104,8 +104,8 @@ def zfsbackup(host):
     # for dataset in datasets:
     #     print(dataset)
 
-    # for snapshot in snapshots:
-    #     print(snapshot)
+    for snapshot in snapshots:
+        print(snapshot)
 
 
 # MAIN
