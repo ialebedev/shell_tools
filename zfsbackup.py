@@ -24,7 +24,7 @@ def check_pool(pool: str) -> bool:
             message(f"Found {pool} pool", True)
             return True
 
-    message(f"No {pool} pool found. Exit", False)
+    message(f"No {pool} pool found", False)
 
     return False
 
@@ -42,7 +42,7 @@ def get_datasets(pool: str) -> list[str]:
     if datasets:
         message(f"Found datasets in {pool}", True)
     else:
-        message(f"No datasets found in {pool}. Exit", False)
+        message(f"No datasets found in {pool}", False)
 
     return datasets
 
@@ -73,15 +73,17 @@ def create_snapshots(datasets: list[str]) -> list[str]:
     snapshots = []
     for dataset in datasets:
         try:
-            snapshot = subprocess.run(
-                f"zfs snapshot {dataset}@{datetime.today().strftime('%Y.%m.%d_%H:%M:%S')}",
+            snapshot = f"{dataset}@{datetime.today().strftime('%Y.%m.%d_%H:%M:%S')}"
+            subprocess.run(
+                f"zfs snapshot {snapshot}",
                 shell=True,
                 capture_output=True,
                 text=True,
+                check=True,
             )
-        except Exception as error:
+        except subprocess.CalledProcessError as error:
             message(f"Failed to create snapshot for {dataset}", False)
-            print(f"Error: {error}")
+            print(f"Error: {error.stderr}")
         else:
             snapshots.append(snapshot)
             message(f"Created snapshot for {dataset}", True)
@@ -104,8 +106,8 @@ def zfsbackup(host):
     # for dataset in datasets:
     #     print(dataset)
 
-    for snapshot in snapshots:
-        print(snapshot)
+    # for snapshot in snapshots:
+    #     print(snapshot)
 
 
 # MAIN
