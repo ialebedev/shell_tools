@@ -16,35 +16,44 @@ def message(message: str, status: bool):
 
 
 def check_pool(pool: str) -> bool:
-    output = subprocess.run("zpool list", shell=True, capture_output=True, text=True)
-    lines = output.stdout.splitlines()
+    output = subprocess.run(
+        "zpool list -H -o name", shell=True, capture_output=True, text=True
+    )
+    pools = output.stdout.splitlines()
 
-    for line in lines[1:]:
-        if pool == line.split()[0]:
-            message(f"Found {pool} pool", True)
-            return True
-
-    message(f"No {pool} pool found", False)
-
-    return False
+    if pool in pools:
+        message(f"Found {pool} pool", True)
+        return True
+    else:
+        message(f"No {pool} pool found", False)
+        return False
 
 
 def get_datasets(pool: str) -> list[str]:
-    output = subprocess.run(
-        "zfs list -r " + pool + " | grep -v @",
+    datasets = subprocess.run(
+        f"zfs list -r -H -t filesystem {pool} -o name",
         shell=True,
         capture_output=True,
         text=True,
-    )
-    lines = output.stdout.splitlines()
+    ).stdout.splitlines()[1:]
 
-    datasets = [line.split()[0] for line in lines[2:]]
     if datasets:
         message(f"Found datasets in {pool}", True)
     else:
         message(f"No datasets found in {pool}", False)
 
     return datasets
+
+
+def get_snapshots(dataset: str) -> list[str]:
+    snapshots = subprocess.run(
+        f"zfs list -H -t snapshot {dataset} -o name",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+
+    return snapshots
 
 
 def filter_datasets(datasets: list[str], keywords: list[str]) -> list[str]:
@@ -57,10 +66,16 @@ def filter_datasets_for_backup(host: str, datasets: list[str]) -> list[str]:
     match host:
         case "vfxserver02":
             datasets = filter_datasets(datasets, ["Caches", "Trash"])
+            exclude = "zdata/Projects"
+            if exclude in datasets:
+                datasets.remove(exclude)
         case "vfxcache02":
             datasets = filter_datasets(
                 datasets, ["Programs", "Projects", "Tools", "Trash"]
             )
+            exclude = "zdata/Caches"
+            if exclude in datasets:
+                datasets.remove(exclude)
         case _:
             datasets = filter_datasets(datasets, ["Trash"])
 
@@ -73,9 +88,10 @@ def create_snapshots(datasets: list[str]) -> list[str]:
     snapshots = []
     for dataset in datasets:
         try:
-            snapshot = f"{dataset}@{datetime.today().strftime('%Y.%m.%d_%H:%M:%S')}"
+            last_snapshot = get_snapshots(dataset)[-1]
+            new_snapshot = f"{dataset}@{datetime.today().strftime('%Y.%m.%d_%H:%M:%S')}"
             subprocess.run(
-                f"zfs snapshot {snapshot}",
+                f"zfs snapshot {new_snapshot}",
                 shell=True,
                 capture_output=True,
                 text=True,
@@ -85,7 +101,7 @@ def create_snapshots(datasets: list[str]) -> list[str]:
             message(f"Failed to create snapshot for {dataset}", False)
             print(f"Error: {error.stderr}")
         else:
-            snapshots.append(snapshot)
+            snapshots.append(last_snapshot)
             message(f"Created snapshot for {dataset}", True)
 
     return snapshots
