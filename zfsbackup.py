@@ -15,7 +15,7 @@ def message(message: str, status: bool):
         print(f"{message:<70}[ {Fore.RED}Fail{Style.RESET_ALL} ]")
 
 
-def check_pool(pool: str) -> bool:
+def check_pool(pool: str):
     output = subprocess.run(
         "zpool list -H -o name", shell=True, capture_output=True, text=True
     )
@@ -23,10 +23,9 @@ def check_pool(pool: str) -> bool:
 
     if pool in pools:
         message(f"Found {pool} pool", True)
-        return True
     else:
         message(f"No {pool} pool found", False)
-        return False
+        sys.exit(1)
 
 
 def get_datasets(pool: str) -> list[str]:
@@ -35,12 +34,14 @@ def get_datasets(pool: str) -> list[str]:
         shell=True,
         capture_output=True,
         text=True,
+        check=True,
     ).stdout.splitlines()[1:]
 
     if datasets:
         message(f"Found datasets in {pool}", True)
     else:
         message(f"No datasets found in {pool}", False)
+        sys.exit(1)
 
     return datasets
 
@@ -51,9 +52,72 @@ def get_snapshots(dataset: str) -> list[str]:
         shell=True,
         capture_output=True,
         text=True,
+        check=True,
     ).stdout.splitlines()
 
     return snapshots
+
+
+def diff_snapshots(prev: str, last: str) -> bool:
+    try:
+        diff = subprocess.run(
+            f"zfs diff {prev} {last}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as error:
+        message(f"Failed to compare snapshots {prev} and {last}", False)
+        print(f"Error: {error.stderr}")
+        sys.exit(1)
+    else:
+        if diff.stdout:
+            return True
+        else:
+            return False
+
+
+def delete_snapshot(snapshot: str):
+    try:
+        subprocess.run(
+            f"zfs destroy {snapshot}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as error:
+        message(f"Failed to delete {snapshot}", False)
+        print(f"Error: {error.stderr}")
+    else:
+        message(f"Deleted {snapshot}", True)
+
+
+def send_snapshots(datasets: list[str], target: str):
+    for dataset in datasets:
+        snapshots = get_snapshots(dataset)
+        if not snapshots:
+            message(f"No snapshots found in {dataset}", False)
+            continue
+
+        last_snapshot = snapshots[-1]
+        if len(snapshots) == 1:
+            # print(f"{dataset}\nPrev snapshot = None\nLast = {last_snapshot}")
+            # print(f"zfs send -Lv {last_snapshot} | ssh {target} zfs receive -d zdata")
+            message(f"Sent {last_snapshot}", True)
+            continue
+
+        if len(snapshots) >= 2:
+            prev_snapshot = snapshots[-2]
+            # print(f"{dataset}\nPrev snapshot = {prev_snapshot}\nLast = {last_snapshot}")
+            # print(
+            #     f"zfs send -Lvi {prev_snapshot} {last_snapshot} | ssh {target} zfs receive -d zdata"
+            # )
+            if diff_snapshots(prev_snapshot, last_snapshot):
+                message(f"Sent {last_snapshot}", True)
+            else:
+                delete_snapshot(last_snapshot)
 
 
 def filter_datasets(datasets: list[str], keywords: list[str]) -> list[str]:
@@ -64,12 +128,12 @@ def filter_datasets(datasets: list[str], keywords: list[str]) -> list[str]:
 
 def filter_datasets_for_backup(host: str, datasets: list[str]) -> list[str]:
     match host:
-        case "vfxserver02":
+        case "vfxserver01" | "vfxserver02":
             datasets = filter_datasets(datasets, ["Caches", "Trash"])
             exclude = "zdata/Projects"
             if exclude in datasets:
                 datasets.remove(exclude)
-        case "vfxcache02":
+        case "vfxcache01" | "vfxcache02":
             datasets = filter_datasets(
                 datasets, ["Programs", "Projects", "Tools", "Trash"]
             )
@@ -88,10 +152,9 @@ def create_snapshots(datasets: list[str]) -> list[str]:
     snapshots = []
     for dataset in datasets:
         try:
-            last_snapshot = get_snapshots(dataset)[-1]
-            new_snapshot = f"{dataset}@{datetime.today().strftime('%Y.%m.%d_%H:%M:%S')}"
+            snapshot = f"{dataset}@{datetime.today().strftime('%Y.%m.%d_%H:%M:%S')}"
             subprocess.run(
-                f"zfs snapshot {new_snapshot}",
+                f"zfs snapshot {snapshot}",
                 shell=True,
                 capture_output=True,
                 text=True,
@@ -100,8 +163,9 @@ def create_snapshots(datasets: list[str]) -> list[str]:
         except subprocess.CalledProcessError as error:
             message(f"Failed to create snapshot for {dataset}", False)
             print(f"Error: {error.stderr}")
+            sys.exit(1)
         else:
-            snapshots.append(last_snapshot)
+            snapshots.append(snapshot)
             message(f"Created snapshot for {dataset}", True)
 
     return snapshots
@@ -110,26 +174,42 @@ def create_snapshots(datasets: list[str]) -> list[str]:
 def zfsbackup(host):
     message(f"Starting backup scenario for {host}", True)
 
-    if check_pool("zdata"):
-        datasets = get_datasets("zdata")
-    else:
-        sys.exit()
+    check_pool("zdata")
 
+    datasets = get_datasets("zdata")
     datasets = filter_datasets_for_backup(host, datasets)
+
+    # for dataset in datasets:
+    # print(dataset)
 
     snapshots = create_snapshots(datasets)
 
-    # for dataset in datasets:
-    #     print(dataset)
-
     # for snapshot in snapshots:
-    #     print(snapshot)
+    # print(snapshot)
+
+    match host:
+        case "vfxcache01":
+            target = "192.68.20.11"
+        case "vfxserver01":
+            target = "192.168.20.10"
+        case "vfxcache02":
+            target = "192.168.20.15"
+        case "vfxserver02":
+            target = "192.168.20.14"
+        case "vfxstorage01":
+            target = "192.168.20.13"
+        case "vfxstorage02":
+            target = "192.168.20.12"
+        case _:
+            target = "localhost"
+
+    send_snapshots(datasets, target)
 
 
 # MAIN
 def main():
     HOSTNAME = os.uname()[1]
-    HOSTNAME = "vfxserver02"
+    HOSTNAME = "vfxcache02"
 
     zfsbackup(HOSTNAME)
 
