@@ -12,14 +12,13 @@ from datetime import datetime
 
 @dataclass
 class Snapshot:
-    name: str
     dataset: str
-    timestamp: str = field(
+    name: str = field(
         default_factory=lambda: datetime.now().strftime("%Y.%m.%d_%H:%M:%S")
     )
 
     def full_name(self) -> str:
-        return f"{self.name}@{self.timestamp}"
+        return f"{self.dataset}@{self.name}"
 
 
 @dataclass
@@ -43,7 +42,7 @@ class BackupConfig:
     special_excludes: list[str] = field(default_factory=list)
 
 
-def message(message: str, status: bool):
+def message(message: str, status: bool = True):
     if status:
         print(f"{message:<70}[ {Fore.GREEN} OK {Style.RESET_ALL} ]")
     else:
@@ -57,7 +56,7 @@ def check_pool(pool: str):
     pools = output.stdout.splitlines()
 
     if pool in pools:
-        message(f"Found {pool} pool", True)
+        message(f"Found {pool} pool")
     else:
         message(f"No {pool} pool found", False)
         sys.exit(1)
@@ -77,7 +76,7 @@ def get_datasets(pool: str) -> list[Dataset]:
 
 def get_snapshots(dataset: Dataset) -> list[Snapshot]:
     output = subprocess.run(
-        f"zfs list -H -t snapshot {dataset} -o name",
+        f"zfs list -H -t snapshot {dataset.name} -o name",
         shell=True,
         capture_output=True,
         text=True,
@@ -85,7 +84,7 @@ def get_snapshots(dataset: Dataset) -> list[Snapshot]:
     )
 
     dataset.snapshots = [
-        Snapshot(name=snap.split("@")[1], dataset=snap.split("@")[0])
+        Snapshot(dataset=snap.split("@")[0], name=snap.split("@")[1])
         for snap in output.stdout.splitlines()
     ]
 
@@ -120,7 +119,7 @@ def delete_snapshot(snapshot: Snapshot):
             text=True,
             check=True,
         )
-        message(f"Deleted {snapshot.full_name()}", True)
+        message(f"Deleted {snapshot.full_name()}")
     except subprocess.CalledProcessError as error:
         message(f"Failed to delete {snapshot}", False)
         print(f"Error: {error.stderr}")
@@ -137,7 +136,7 @@ def create_snapshot(dataset: Dataset) -> Snapshot:
             check=True,
         )
         dataset.snapshots.append(snapshot)
-        message(f"Created snapshot for {dataset.name}", True)
+        message(f"Created snapshot for {dataset.name}")
         return snapshot
     except subprocess.CalledProcessError as error:
         message(f"Failed to create snapshot for {dataset.name}", False)
@@ -151,7 +150,7 @@ def filter_datasets(datasets: list[Dataset], config: BackupConfig) -> list[Datas
         if any(keyword in dataset.name for keyword in config.exclude_keywords):
             continue
 
-        if any(exclude in dataset.name for exclude in config.special_excludes):
+        if any(exclude == dataset.name for exclude in config.special_excludes):
             continue
 
         filtered.append(dataset)
@@ -165,12 +164,12 @@ def send_snapshot(dataset: Dataset, target: str):
         return
 
     if len(dataset.snapshots) == 1:
-        message(f"Sent initial snapshot {last.full_name()}", True)
+        message(f"Sent initial snapshot {last.full_name()}")
         return
 
     prev = dataset.prev_snapshot()
     if diff_snapshots(prev, last):
-        message(f"Sent incremental snapshot {last.full_name()}", True)
+        message(f"Sent incremental snapshot {last.full_name()}")
     else:
         delete_snapshot(last)
 
@@ -198,7 +197,7 @@ def get_backup_config(host: str) -> BackupConfig:
 
 
 def zfsbackup(host: str):
-    message(f"Starting backup scenario for {host}", True)
+    message(f"Starting backup scenario for {host}")
 
     config = get_backup_config(host)
     check_pool(config.pool)
@@ -206,10 +205,14 @@ def zfsbackup(host: str):
     datasets = get_datasets(config.pool)
     datasets = filter_datasets(datasets, config)
 
+    if datasets:
+        message(f"Found datasets in {config.pool}")
+    else:
+        message(f"No datasets found in {config.pool}", False)
+        sys.exit(1)
+
     for dataset in datasets:
-        print(dataset.name)
         create_snapshot(dataset)
-        
         get_snapshots(dataset)
         send_snapshot(dataset, config.target)
 
@@ -217,7 +220,7 @@ def zfsbackup(host: str):
 # MAIN
 def main():
     HOSTNAME = os.uname()[1]
-    HOSTNAME = "vfxcache02"
+    HOSTNAME = "vfxserver02"
 
     zfsbackup(HOSTNAME)
 
