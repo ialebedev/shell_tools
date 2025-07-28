@@ -74,6 +74,19 @@ def get_datasets(pool: str) -> list[Dataset]:
     return [Dataset(name=name) for name in output.stdout.splitlines()[1:]]
 
 
+def filter_datasets(datasets: list[Dataset], config: BackupConfig) -> list[Dataset]:
+    filtered = []
+    for dataset in datasets:
+        if any(keyword in dataset.name for keyword in config.exclude_keywords):
+            continue
+
+        if any(exclude == dataset.name for exclude in config.special_excludes):
+            continue
+
+        filtered.append(dataset)
+    return filtered
+
+
 def get_snapshots(dataset: Dataset) -> list[Snapshot]:
     output = subprocess.run(
         f"zfs list -H -t snapshot {dataset.name} -o name",
@@ -119,7 +132,6 @@ def delete_snapshot(snapshot: Snapshot):
             text=True,
             check=True,
         )
-        message(f"Deleted {snapshot.full_name()}")
     except subprocess.CalledProcessError as error:
         message(f"Failed to delete {snapshot}", False)
         print(f"Error: {error.stderr}")
@@ -136,25 +148,11 @@ def create_snapshot(dataset: Dataset) -> Snapshot:
             check=True,
         )
         dataset.snapshots.append(snapshot)
-        message(f"Created snapshot for {dataset.name}")
         return snapshot
     except subprocess.CalledProcessError as error:
         message(f"Failed to create snapshot for {dataset.name}", False)
         print(f"Error: {error.stderr}")
         sys.exit(1)
-
-
-def filter_datasets(datasets: list[Dataset], config: BackupConfig) -> list[Dataset]:
-    filtered = []
-    for dataset in datasets:
-        if any(keyword in dataset.name for keyword in config.exclude_keywords):
-            continue
-
-        if any(exclude == dataset.name for exclude in config.special_excludes):
-            continue
-
-        filtered.append(dataset)
-    return filtered
 
 
 def send_snapshot(dataset: Dataset, target: str):
@@ -171,6 +169,7 @@ def send_snapshot(dataset: Dataset, target: str):
     if diff_snapshots(prev, last):
         message(f"Sent incremental snapshot {last.full_name()}")
     else:
+        message(f"No changes in {dataset.name}")
         delete_snapshot(last)
 
 
