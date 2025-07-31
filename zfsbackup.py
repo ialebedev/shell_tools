@@ -137,6 +137,13 @@ def delete_snapshot(snapshot: Snapshot):
         print(f"Error: {error.stderr}")
 
 
+def clean_snapshots(dataset: Dataset):
+    while len(dataset.snapshots) > 3:
+        delete_snapshot(dataset.snapshots[0])
+        message(f"Deleted old snapshot {dataset.snapshots[0].full_name()}")
+        dataset.snapshots.pop(0)
+
+
 def create_snapshot(dataset: Dataset) -> Snapshot:
     snapshot = Snapshot(dataset=dataset.name)
     try:
@@ -171,6 +178,7 @@ def send_snapshot(dataset: Dataset, target: str):
     else:
         message(f"No changes in {dataset.name}")
         delete_snapshot(last)
+        dataset.snapshots.pop(-1)
 
 
 def get_backup_config(host: str) -> BackupConfig:
@@ -214,6 +222,7 @@ def zfsbackup(host: str):
         create_snapshot(dataset)
         get_snapshots(dataset)
         send_snapshot(dataset, config.target)
+        clean_snapshots(dataset)
 
 
 # MAIN
