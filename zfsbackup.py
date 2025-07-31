@@ -51,7 +51,7 @@ def message(message: str, status: bool = True):
 
 def check_pool(pool: str):
     output = subprocess.run(
-        "zpool list -H -o name", shell=True, capture_output=True, text=True
+        ["zpool", "list", "-H", "-o", "name"], capture_output=True, text=True
     )
     pools = output.stdout.splitlines()
 
@@ -64,8 +64,7 @@ def check_pool(pool: str):
 
 def get_datasets(pool: str) -> list[Dataset]:
     output = subprocess.run(
-        f"zfs list -r -H -t filesystem {pool} -o name",
-        shell=True,
+        ["zfs", "list", "-r", "-H", "-t", "filesystem", pool, "-o", "name"],
         capture_output=True,
         text=True,
         check=True,
@@ -89,8 +88,7 @@ def filter_datasets(datasets: list[Dataset], config: BackupConfig) -> list[Datas
 
 def get_snapshots(dataset: Dataset) -> list[Snapshot]:
     output = subprocess.run(
-        f"zfs list -H -t snapshot {dataset.name} -o name",
-        shell=True,
+        ["zfs", "list", "-H", "-t", "snapshot", dataset.name, "-o", "name"],
         capture_output=True,
         text=True,
         check=True,
@@ -107,8 +105,7 @@ def get_snapshots(dataset: Dataset) -> list[Snapshot]:
 def diff_snapshots(prev: Snapshot, last: Snapshot) -> bool:
     try:
         diff = subprocess.run(
-            f"zfs diff {prev.full_name()} {last.full_name()}",
-            shell=True,
+            ["zfs", "diff", prev.full_name(), last.full_name()],
             capture_output=True,
             text=True,
             check=True,
@@ -126,8 +123,7 @@ def diff_snapshots(prev: Snapshot, last: Snapshot) -> bool:
 def delete_snapshot(snapshot: Snapshot):
     try:
         subprocess.run(
-            f"zfs destroy {snapshot.full_name()}",
-            shell=True,
+            ["zfs", "destroy", snapshot.full_name()],
             capture_output=True,
             text=True,
             check=True,
@@ -148,8 +144,7 @@ def create_snapshot(dataset: Dataset) -> Snapshot:
     snapshot = Snapshot(dataset=dataset.name)
     try:
         subprocess.run(
-            f"zfs snapshot {snapshot.full_name()}",
-            shell=True,
+            ["zfs", "snapshot", snapshot.full_name()],
             capture_output=True,
             text=True,
             check=True,
