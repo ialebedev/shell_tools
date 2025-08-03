@@ -44,9 +44,9 @@ class BackupConfig:
 
 def message(message: str, status: bool = True):
     if status:
-        print(f"{message:<70}[ {Fore.GREEN} OK {Style.RESET_ALL} ]")
+        print(f"{message:<72}[ {Fore.GREEN} OK {Style.RESET_ALL} ]")
     else:
-        print(f"{message:<70}[ {Fore.RED}Fail{Style.RESET_ALL} ]")
+        print(f"{message:<72}[ {Fore.RED}Fail{Style.RESET_ALL} ]")
 
 
 def check_pool(pool: str):
