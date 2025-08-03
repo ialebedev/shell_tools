@@ -240,7 +240,7 @@ def zfsbackup(host: str):
 # MAIN
 def main():
     HOSTNAME = os.uname()[1]
-    HOSTNAME = "vfxserver02"
+    # HOSTNAME = "vfxserver02"
 
     # if len(sys.argv) == 3:
     #     match sys.argv[1]:
