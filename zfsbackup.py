@@ -164,12 +164,12 @@ def send_snapshot(dataset: Dataset, target: str):
         return
 
     if len(dataset.snapshots) == 1:
-        message(f"Sent initial snapshot {last.full_name()}")
+        message(f"Sent init snapshot {last.full_name()}")
         return
 
     prev = dataset.prev_snapshot()
     if diff_snapshots(prev, last):
-        message(f"Sent incremental snapshot {last.full_name()}")
+        message(f"Sent diff snapshot {last.full_name()}")
     else:
         message(f"No changes in {dataset.name}")
         delete_snapshot(last)
