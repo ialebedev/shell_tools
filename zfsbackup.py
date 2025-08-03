@@ -176,6 +176,21 @@ def send_snapshot(dataset: Dataset, target: str):
         dataset.snapshots.pop(-1)
 
 
+def ping(host: str) -> bool:
+    try:
+        subprocess.run(
+            ["ping", "-c", "1", host],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=3,
+        )
+        return True
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        message(f"Target {host} is offline.", False)
+        return False
+
+
 def get_backup_config(host: str) -> BackupConfig:
     config = BackupConfig(host=host)
 
@@ -216,7 +231,9 @@ def zfsbackup(host: str):
     for dataset in datasets:
         create_snapshot(dataset)
         get_snapshots(dataset)
-        send_snapshot(dataset, config.target)
+
+        if ping(config.target):
+            send_snapshot(dataset, config.target)
         clean_snapshots(dataset)
 
 
@@ -224,6 +241,17 @@ def zfsbackup(host: str):
 def main():
     HOSTNAME = os.uname()[1]
     HOSTNAME = "vfxserver02"
+
+    # if len(sys.argv) == 3:
+    #     match sys.argv[1]:
+    #         case '-h' | '--host':
+    #             host = sys.argv[2]
+    #         case '-?' | '--help':
+    #             print("Arguments:\n")
+    #             print("-? or --help : This help.\n")
+    #             print("-h or --host <HOSTNAME or IP>: Target host to send snapshots.\n")
+    # else:
+    #     print("Not enough arguments. Run help -? or --help.")
 
     zfsbackup(HOSTNAME)
 
