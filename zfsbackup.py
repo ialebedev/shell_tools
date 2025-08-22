@@ -220,15 +220,15 @@ def zfsbackup(host: str):
     check_pool(config.pool)
 
     datasets = get_datasets(config.pool)
-    datasets = filter_datasets(datasets, config)
+    datasets_filtered = filter_datasets(datasets, config)
 
-    if datasets:
+    if datasets_filtered:
         message(f"Found datasets in {config.pool}")
     else:
         message(f"No datasets found in {config.pool}", False)
         sys.exit(1)
 
-    for dataset in datasets:
+    for dataset in datasets_filtered:
         create_snapshot(dataset)
         get_snapshots(dataset)
 
