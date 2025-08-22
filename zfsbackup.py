@@ -234,6 +234,8 @@ def zfsbackup(host: str):
 
         if ping(config.target):
             send_snapshot(dataset, config.target)
+
+    for dataset in datasets:
         clean_snapshots(dataset)
 
 
