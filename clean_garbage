@@ -2,6 +2,7 @@
 
 find ${1} -type f \( -name '._*' -o \
                      -name '*~' -o \
+                     -name 'Thumbs.db' -o \
                      -name '.DS_Store' -o \
                      -name '.nfs*' -o \
                      -iname '*.nk~*' -o \
@@ -13,4 +14,5 @@ find ${1} -type f \( -name '._*' -o \
 
 find ${1} -type d \( -name '__MACOS*' -o \
                      -name '.TemporaryItems' -o \
+                     -name '.thumbnails' -o \
                      -name '.Trash*' \) -exec rm -rfv {} +
