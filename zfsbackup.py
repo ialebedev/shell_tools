@@ -134,8 +134,8 @@ def delete_snapshot(snapshot: Snapshot):
         print(f"Error: {error.stderr}")
 
 
-def clean_snapshots(dataset: Dataset):
-    while len(dataset.snapshots) > 3:
+def clean_snapshots(dataset: Dataset, depth: int):
+    while len(dataset.snapshots) > depth:
         delete_snapshot(dataset.snapshots[0])
         message(f"Deleted old snapshot {dataset.snapshots[0].full_name()}")
         dataset.snapshots.pop(0)
@@ -223,14 +223,7 @@ def zfsbackup(host: str, args):
     # All datasets
     datasets = get_datasets(config.pool)
 
-    # Only clean snapshots
-    if args.clean:
-        for dataset in datasets:
-            clean_snapshots(dataset)
-        print("Exit")
-        sys.exit(0)
-
-    # Datasets for check and backup    
+    # Datasets for check and backup
     datasets_filtered = filter_datasets(datasets, config)
 
     if datasets_filtered:
@@ -246,22 +239,27 @@ def zfsbackup(host: str, args):
         if ping(config.target):
             send_snapshot(dataset, config.target)
 
-    for dataset in datasets:
-        clean_snapshots(dataset)
+    if args.clean:
+        if args.depth > 1:
+            for dataset in datasets:
+                clean_snapshots(dataset, args.depth)
+        else:
+            message("Depth must be at least > 1", False)
+            sys.exit(1)
 
 
 # MAIN
 def main():
     HOSTNAME = os.uname()[1]
-    HOSTNAME = "vfxserver02"
+    # HOSTNAME = "vfxserver02"
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--clean', action='store_true', help='Clean snapshots')
-    parser.add_argument('-d', '--depth', action='store', type=int, help='Clean depth')
-    parser.add_argument('-t', '--target', action='store', help='Target host IP address or hostname')
+    parser.add_argument("-c", "--clean", action="store_true", help="Clean snapshots")
+    parser.add_argument("-d", "--depth", action="store", type=int, help="Clean depth")
+    parser.add_argument("-t", "--target", action="store", help="Target host IP address")
 
     args = parser.parse_args()
-        
+
     zfsbackup(HOSTNAME, args)
 
 
