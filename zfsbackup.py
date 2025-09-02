@@ -2,6 +2,7 @@
 
 import os
 import sys
+import argparse
 import subprocess
 
 from dataclasses import dataclass, field
@@ -213,13 +214,23 @@ def get_backup_config(host: str) -> BackupConfig:
     return config
 
 
-def zfsbackup(host: str):
+def zfsbackup(host: str, args):
     message(f"Starting backup scenario for {host}")
 
     config = get_backup_config(host)
     check_pool(config.pool)
 
+    # All datasets
     datasets = get_datasets(config.pool)
+
+    # Only clean snapshots
+    if args.clean:
+        for dataset in datasets:
+            clean_snapshots(dataset)
+        print("Exit")
+        sys.exit(0)
+
+    # Datasets for check and backup    
     datasets_filtered = filter_datasets(datasets, config)
 
     if datasets_filtered:
@@ -242,20 +253,16 @@ def zfsbackup(host: str):
 # MAIN
 def main():
     HOSTNAME = os.uname()[1]
-    # HOSTNAME = "vfxserver02"
+    HOSTNAME = "vfxserver02"
 
-    # if len(sys.argv) == 3:
-    #     match sys.argv[1]:
-    #         case '-h' | '--host':
-    #             host = sys.argv[2]
-    #         case '-?' | '--help':
-    #             print("Arguments:\n")
-    #             print("-? or --help : This help.\n")
-    #             print("-h or --host <HOSTNAME or IP>: Target host to send snapshots.\n")
-    # else:
-    #     print("Not enough arguments. Run help -? or --help.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--clean', action='store_true', help='Clean snapshots')
+    parser.add_argument('-d', '--depth', action='store', type=int, help='Clean depth')
+    parser.add_argument('-t', '--target', action='store', help='Target host IP address or hostname')
 
-    zfsbackup(HOSTNAME)
+    args = parser.parse_args()
+        
+    zfsbackup(HOSTNAME, args)
 
 
 if __name__ == "__main__":
