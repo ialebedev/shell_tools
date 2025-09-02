@@ -240,11 +240,11 @@ def zfsbackup(host: str, args):
             send_snapshot(dataset, config.target)
 
     if args.clean:
-        if args.depth > 1:
+        if args.depth > 0:
             for dataset in datasets:
                 clean_snapshots(dataset, args.depth)
         else:
-            message("Depth must be at least > 1", False)
+            message("Depth must be more than zero.", False)
             sys.exit(1)
 
 
