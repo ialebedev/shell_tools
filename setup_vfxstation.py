@@ -157,7 +157,7 @@ def link_soft():
     # Additional links
     os.symlink("/lib/libidn.so.12", "/lib/libidn.so.11")
     os.symlink("/lib/libcrypt.so.2", "/lib/libcrypt.so.1")
-    os.symlink("/lib/libpython3.13.so.1.0", "/lib/libpython3.9.so.1.0")
+    os.symlink("/lib/libpython3.14.so.1.0", "/lib/libpython3.11.so.1.0")
 
     time.sleep(1)
     print("Linking software ... Done")
