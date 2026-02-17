@@ -73,9 +73,6 @@ def setup_automount():
 
 # SOFT
 def install_soft():
-    # REFLECTOR
-    os.system("reflector -l 5 -c Russia --sort rate --save /etc/pacman.d/mirrorlist")
-
     # COMMON SOFT
     os.system(
         "pacman -S --needed --noconfirm sudo man tmux rsync bash-completion exfat-utils ntfs-3g libunrar unrar zip unzip p7zip dkms duf htop eza bat yazi zoxide fzf util-linux ethtool numactl"

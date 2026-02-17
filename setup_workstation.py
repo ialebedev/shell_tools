@@ -131,7 +131,8 @@ def mount_volumes(hostname):
 
 # PACSTRAP & Configuration
 def pacstrap(hostname):
-    os.system("reflector -l 5 -c Russia --sort rate --save /etc/pacman.d/mirrorlist")
+    with open("/etc/pacman.d/mirrorlist", "w") as f:
+        f.write("Server = http://192.168.20.15:9129/repo/archlinux/$repo/os/$arch")
 
     print("=" * 40)
     print("PACSTRAP & Configuration:")
@@ -144,7 +145,7 @@ def pacstrap(hostname):
 
     print("Installing base packages")
     os.system(
-        "pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-firmware python helix nfs-utils dkms bash-completion man openssh rsync reflector terminus-font wget "
+        "pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-firmware python helix nfs-utils dkms bash-completion man openssh rsync terminus-font wget "
         + ucode
     )
 
@@ -193,6 +194,9 @@ def pacstrap(hostname):
         f.seek(0)
         f.write(data)
         f.truncate()
+        
+    with open("/mnt/etc/pacman.d/mirrorlist", "w") as f:
+        f.write("Server = http://192.168.20.15:9129/repo/archlinux/$repo/os/$arch")
 
     print("\nSetting root password")
     os.system("arch-chroot /mnt passwd")
