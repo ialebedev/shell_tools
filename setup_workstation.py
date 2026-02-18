@@ -174,7 +174,7 @@ def pacstrap(hostname):
     with open("/mnt/etc/modprobe.d/blacklist.conf", "w") as f:
         f.write("blacklist nouveau\n")
         f.write("options nouveau modeset=0\n")
-        f.write("blacklist sp5100\n")
+        f.write("blacklist sp5100_tco\n")
         f.write("blacklist iTCO_wdt\n")
 
     print("\nSetting up systemd services")
@@ -225,7 +225,7 @@ def pacstrap(hostname):
         f.write("initrd  /initramfs-linux-lts.img\n")
         f.write("initrd  /" + ucode + ".img\n")
         f.write(
-            "options root=" + uuid + " rw nowatchdog nmi_watchdog=0 loglevel=3 nvidia_drm.modeset=1\n"
+            "options root=" + uuid + " rw nowatchdog nmi_watchdog=0 processor.max_cstate=1 loglevel=3 nvidia_drm.modeset=1\n"
         )
 
     with open("/mnt/boot/loader/entries/arch-fallback.conf", "w") as f:
