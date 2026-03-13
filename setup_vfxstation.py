@@ -192,7 +192,7 @@ def create_users():
         os.system("passwd master")
 
     if input("Create render user? (Y/n) ").lower() in {"y", ""}:
-        os.system("useradd -g 1000 -s /bin/bash -m render")
+        os.system("useradd -u 900 -g 1000 -s /bin/bash -m render")
 
     if input("Create user? (Y/n) ").lower() in {"y", ""}:
         user = input("Enter user name: ").lower()
@@ -216,6 +216,7 @@ def create_base_directories():
     os.mkdir("/mnt/" + hostname + "/Temp/Blender", 0o777)
     os.mkdir("/mnt/" + hostname + "/Temp/Houdini", 0o777)
     os.mkdir("/mnt/" + hostname + "/Temp/Nuke", 0o777)
+    os.mkdir("/mnt/" + hostname + "/Temp/Nuke/nuke-u900", 0o777)
     os.mkdir("/mnt/" + hostname + "/Temp/Nuke/nuke-u1000", 0o777)
     os.mkdir("/mnt/" + hostname + "/Temp/Nuke/nuke-u1001", 0o777)
     os.mkdir("/mnt/" + hostname + "/Temp/Nuke/nuke-u1002", 0o777)
