@@ -196,7 +196,7 @@ def pacstrap(hostname):
         f.seek(0)
         f.write(data)
         f.truncate()
-        
+
     with open("/mnt/etc/pacman.d/mirrorlist", "w") as f:
         f.write("Server = http://192.168.20.15:9129/repo/archlinux/$repo/os/$arch")
 
@@ -225,7 +225,9 @@ def pacstrap(hostname):
         f.write("initrd  /initramfs-linux-lts.img\n")
         f.write("initrd  /" + ucode + ".img\n")
         f.write(
-            "options root=" + uuid + " rw nowatchdog nmi_watchdog=0 processor.max_cstate=1 loglevel=3 nvidia_drm.modeset=1\n"
+            "options root="
+            + uuid
+            + " rw nowatchdog nmi_watchdog=0 processor.max_cstate=1 loglevel=3 nvidia_drm.modeset=1\n"
         )
 
     with open("/mnt/boot/loader/entries/arch-fallback.conf", "w") as f:
@@ -244,12 +246,12 @@ def pacstrap(hostname):
     print("\nSetting up /etc/resolv.conf")
     with open("/mnt/etc/resolv.conf", "a") as f:
         f.write("\nnameserver 192.168.20.1\n")
-        
-    print('\nSetting up /usr/local/bin/hx')
-    os.system('arch-chroot /mnt ln -s /usr/bin/helix /usr/local/bin/hx')
-    
-    print('\nUnmountting /mnt')
-    os.system('umount -R /mnt')
+
+    print("\nSetting up /usr/local/bin/hx")
+    os.system("arch-chroot /mnt ln -s /usr/bin/helix /usr/local/bin/hx")
+
+    print("\nUnmountting /mnt")
+    os.system("umount -R /mnt")
 
 
 # MAIN
