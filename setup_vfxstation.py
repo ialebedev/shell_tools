@@ -109,10 +109,17 @@ def install_soft():
     # SOFT FOR VFXSTATION
     if input("Install soft for vfxstation? [y/N] ").lower() == "y":
         os.system(
-            "pacman -S --needed --noconfirm plasma-desktop plasma-login-manager plasma-x11-session plasma-pa plasma-systemmonitor kdeplasma-addons breeze breeze-gtk kde-gtk-config konsole thunar thunar-volman gvfs thunar-archive-plugin pipewire pipewire-pulse okular spectacle filezilla firefox firefox-ublock-origin ttf-dejavu ttf-liberation ttf-bitstream-vera cantarell-fonts ark kscreen krename kate ktorrent kolourpaint kdenlive mpv mediainfo inkscape python-pyqt5 python-lxml telegram-desktop nvidia-open-dkms nvidia-utils opencl-nvidia qt5-xmlpatterns hddtemp psensor obsidian doublecmd-qt6"
+            "pacman -S --needed --noconfirm sddm plasma-desktop plasma-pa plasma-systemmonitor kdeplasma-addons breeze breeze-gtk kde-gtk-config konsole thunar thunar-volman gvfs thunar-archive-plugin pipewire pipewire-pulse okular spectacle filezilla firefox firefox-ublock-origin ttf-dejavu ttf-liberation ttf-bitstream-vera cantarell-fonts ark kscreen krename kate ktorrent kolourpaint kdenlive mpv mediainfo inkscape python-pyqt5 python-lxml telegram-desktop nvidia-open-dkms nvidia-utils opencl-nvidia qt5-xmlpatterns hddtemp psensor obsidian doublecmd-qt6"
         )
 
-        os.system("systemctl enable plasmalogin.service")
+        with open("/etc/sddm.conf", "w") as f:
+            f.write("[Theme]\n")
+            f.write("Current=breeze\n\n")
+            f.write("[Users]\n")
+            f.write("MinimumUid=1000\n")
+            f.write("MaximumUid=9999\n")
+        
+        os.system("systemctl enable sddm.service")
         time.sleep(1)
         print("Installing software for vfxstation ... Done")
 
