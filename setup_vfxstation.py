@@ -116,8 +116,8 @@ def install_soft():
             f.write("[Theme]\n")
             f.write("Current=breeze\n\n")
             f.write("[Users]\n")
-            f.write("MinimumUid=1000\n")
-            f.write("MaximumUid=9999\n")
+            f.write("MinimumUid=99999\n")
+            f.write("MaximumUid=99999\n")
 
         os.system("systemctl enable sddm.service")
         time.sleep(1)
