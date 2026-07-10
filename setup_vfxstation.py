@@ -75,7 +75,7 @@ def setup_automount():
 def install_soft():
     # COMMON SOFT
     os.system(
-        "pacman -S --needed --noconfirm sudo man tmux rsync bash-completion exfat-utils ntfs-3g libunrar unrar zip unzip p7zip dkms duf htop eza bat yazi zoxide fzf util-linux ethtool numactl btop ncdu openresolv"
+        "pacman -S --needed --noconfirm tmux exfat-utils ntfs-3g unrar zip unzip p7zip duf btop eza bat yazi zoxide fzf util-linux ethtool numactl ncdu openresolv"
     )
 
     # SOFT FOR AFRENDER
