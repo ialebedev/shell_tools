@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Проверка прав root
+if [[ $EUID -ne 0 ]]; then
+   echo "ОШИБКА: Этот скрипт должен быть запущен с правами root (sudo)." >&2
+   exit 1
+fi
+
+# Формирование временной метки
+# Формат с дефисами/точками (рекомендуемый):
+# TIMESTAMP=$(date +'%Y.%m.%d_%H.%M.%S')
+
+# Формат строго с двоеточиями (как в вашем примере):
+TIMESTAMP=$(date +'%Y.%m.%d_%H:%M:%S')
+
+# Список целевых датасетов
+DATASETS=(
+    "zroot/ROOT/arch"
+    "zroot/DATA/home"
+    "zroot/DATA/root"
+)
+
+echo "=== 1. Создание ZFS снапшотов ==="
+
+for ds in "${DATASETS[@]}"; do
+    # Проверяем существование датасета перед созданием снимка
+    if zfs list "$ds" >/dev/null 2>&1; then
+        echo "Создание снимка: ${ds}@${TIMESTAMP}"
+        zfs snapshot "${ds}@${TIMESTAMP}"
+    else
+        echo "ПРЕДУПРЕЖДЕНИЕ: Датасет $ds не найден, пропуск." >&2
+    fi
+done
+
+echo ""
+echo "=== 2. Запуск обновления системы (yay -Syu) ==="
+echo ""
+
+# Запуск обновления
+yay -Syu
