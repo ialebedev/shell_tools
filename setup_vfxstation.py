@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import os
 import time
@@ -86,23 +85,25 @@ def install_soft():
         time.sleep(1)
 
         # AFRENDER SERVICE
-        if not os.path.exists("/usr/lib/systemd/system/afrender.service"):
-            if input("Setup afrender sevice? [y/N] ").lower() == "y":
-                path = "/mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/afrender.service"
+        if (
+            not os.path.exists("/usr/lib/systemd/system/afrender.service")
+            and input("Setup afrender sevice? [y/N] ").lower() == "y"
+        ):
+            path = "/mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/afrender.service"
 
-                if os.path.exists(path):
-                    try:
-                        os.system(
-                            "cp -v /mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/afrender.service /etc/systemd/system/"
-                        )
-                        os.system(
-                            "cp -v /mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/stop_hserver.service /etc/systemd/system/"
-                        )
-                        os.system("systemctl enable afrender.service")
-                        os.system("systemctl enable stop_hserver.service")
-                        time.sleep(1)
-                    except OSError as e:
-                        print("Error: %s : %s" % (path, e.strerror))
+            if os.path.exists(path):
+                try:
+                    os.system(
+                        "cp -v /mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/afrender.service /etc/systemd/system/"
+                    )
+                    # os.system(
+                    #     "cp -v /mnt/vfxserver02/Tools/_configuration_files/etc/systemd/system/stop_hserver.service /etc/systemd/system/"
+                    # )
+                    os.system("systemctl enable afrender.service")
+                    os.system("systemctl enable stop_hserver.service")
+                    time.sleep(1)
+                except OSError as e:
+                    print(f"Error: {path} : {e.strerror}")
 
         print("Installing soft for afrender ... Done")
 
@@ -251,7 +252,7 @@ def create_icons():
                     os.symlink(src, des)
 
         except OSError as e:
-            print("Error: %s : %s" % (icons_path, e.strerror))
+            print(f"Error: {icons_path} : {e.strerror}")
 
     time.sleep(1)
     print("Creating menu icons ... Done")

@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import os
 import stat
-import sys
 import subprocess
+import sys
 
 
 # DISKs INFO
