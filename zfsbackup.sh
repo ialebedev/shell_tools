@@ -16,7 +16,11 @@
 #   - права на zfs snapshot/send/destroy локально и zfs receive удалённо
 #     (либо root, либо настроено через `zfs allow`)
 
-set -evo pipefail
+# Включаем строгий режим обработки ошибок и логирования в скрипте
+set -eo pipefail
+# -e (errexit) моментально останавливает скрипт при любой ошибке
+# -o в связке с pipefail означает строгий контроль ошибок внутри конвейеров
+# -v (verbose) подробный вывод
 
 POOL="zdata"
 REMOTE_POOL="zdata"
@@ -42,3 +46,12 @@ usage() {
     echo "Если датасеты не переданы, то используем список DATASETS" >&2
     exit 1
 }
+
+com="dfgdsfgs"
+
+if command -v $com
+then
+    echo "Editor exists"
+else
+    echo "No editor"
+fi
