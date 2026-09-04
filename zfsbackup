@@ -1,0 +1,153 @@
+#!/usr/bin/env bash
+#
+# zfsbackup — снапшотит датасеты пула zdata и отправляет их на удалённый
+# сервер через zfs send/receive, если есть изменения. Если изменений нет —
+# снапшот просто удаляется.
+#
+# Использование:
+#   ./zfsbackup <remote_ip> [dataset1 dataset2 ...]
+#
+# Если список датасетов не передан аргументами — берётся из массива
+# DATASETS ниже.
+#
+# Требования:
+#   - passwordless SSH (по ключу) с этого сервера на remote_ip под REMOTE_USER
+#   - на удалённом сервере должен существовать пул REMOTE_POOL
+#   - права на zfs snapshot/send/destroy локально и zfs receive удалённо
+#     (либо root, либо настроено через `zfs allow`)
+
+set -euo pipefail
+
+### ==================== НАСТРОЙКИ ==================== ###
+
+POOL="zdata"                 # локальный пул
+REMOTE_POOL="zdata"          # пул на удалённом сервере (может отличаться)
+REMOTE_USER="master"           # пользователь для ssh на удалённый сервер
+SNAP_PREFIX="autobackup"     # префикс имени снапшотов, созданных этим скриптом
+SSH_OPTS="-o BatchMode=yes -o ConnectTimeout=10"
+LOCKFILE="/var/run/zfsbackup.lock"
+LOGFILE="/var/log/zfsbackup.log"
+
+# Список датасетов по умолчанию (без имени пула, только "хвост").
+# Например для zdata/data1 указываем просто "data1".
+DATASETS=(
+    "Programs"
+    "9thPlanet"
+    "Chaika"
+    "POSTKINO"
+    "TECZON"
+    "VVP"
+    "Tools"
+)
+
+### ==================================================== ###
+
+usage() {
+    echo "Использование: $0 <remote_ip> [dataset1 dataset2 ...]" >&2
+    echo "Если датасеты не переданы — используется список DATASETS внутри скрипта" >&2
+    exit 1
+}
+
+[[ $# -lt 1 ]] && usage
+REMOTE_IP="$1"
+shift
+if [[ $# -gt 0 ]]; then
+    DATASETS=("$@")
+fi
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOGFILE"
+}
+
+# Не даём двум копиям скрипта работать одновременно
+exec 200>"$LOCKFILE"
+if ! flock -n 200; then
+    log "Скрипт уже выполняется (lock: $LOCKFILE), выходим"
+    exit 1
+fi
+
+check_ssh() {
+    ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_IP}" "zfs list >/dev/null 2>&1"
+}
+
+log "===== Запуск бэкапа на ${REMOTE_IP} ====="
+
+if ! check_ssh; then
+    log "ОШИБКА: нет доступа по SSH к ${REMOTE_IP}, либо zfs там недоступен"
+    exit 1
+fi
+
+process_dataset() {
+    local ds="$1"
+    local full_ds="${POOL}/${ds}"
+    local remote_ds="${REMOTE_POOL}/${ds}"
+    local ts new_snap prev_snap written
+
+    log "== Обработка ${full_ds} =="
+
+    if ! zfs list "$full_ds" >/dev/null 2>&1; then
+        log "ОШИБКА: датасет $full_ds не существует, пропускаем"
+        return 1
+    fi
+
+    # Ищем последний снапшот с нашим префиксом (до создания нового)
+    prev_snap=$(zfs list -t snapshot -o name -s creation -H -r "$full_ds" 2>/dev/null \
+                | grep -E "^${full_ds}@${SNAP_PREFIX}-" | tail -n1 || true)
+
+    ts=$(date +%Y%m%d-%H%M%S)
+    new_snap="${full_ds}@${SNAP_PREFIX}-${ts}"
+
+    if ! zfs snapshot "$new_snap"; then
+        log "ОШИБКА: не удалось создать снапшот $new_snap"
+        return 1
+    fi
+
+    # written = сколько байт записано с предыдущего снапшота
+    # (или с момента создания датасета, если снапшотов раньше не было)
+    written=$(zfs get -Hpo value written "$new_snap")
+
+    if [[ "$written" -eq 0 && -n "$prev_snap" ]]; then
+        log "Изменений нет в ${full_ds} (written=0), удаляем $new_snap"
+        zfs destroy "$new_snap"
+        return 0
+    fi
+
+    log "Обнаружены изменения в ${full_ds} (written=${written} байт), отправляем на ${REMOTE_IP}"
+
+    if [[ -z "$prev_snap" ]]; then
+        # Первая отправка этого датасета — полный поток
+        if zfs send "$new_snap" \
+             | ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_IP}" "zfs receive -F ${remote_ds}"; then
+            log "OK: полная отправка ${new_snap} завершена успешно"
+        else
+            log "ОШИБКА при полной отправке ${new_snap}, откатываем локальный снапшот"
+            zfs destroy "$new_snap"
+            return 1
+        fi
+    else
+        # Инкрементальная отправка от предыдущего снапшота к новому
+        if zfs send -i "$prev_snap" "$new_snap" \
+             | ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_IP}" "zfs receive -F ${remote_ds}"; then
+            log "OK: инкрементальная отправка ${prev_snap} -> ${new_snap} завершена успешно"
+            log "Удаляем локально старый снапшот ${prev_snap}"
+            zfs destroy "$prev_snap"
+        else
+            log "ОШИБКА при отправке ${new_snap}, удаляем его; ${prev_snap} остаётся для повтора в следующий раз"
+            zfs destroy "$new_snap"
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
+FAILED=0
+for ds in "${DATASETS[@]}"; do
+    if ! process_dataset "$ds"; then
+        FAILED=1
+    fi
+done
+
+log "===== Бэкап завершён (код возврата: ${FAILED}) ====="
+
+exit $FAILED
