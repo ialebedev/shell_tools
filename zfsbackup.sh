@@ -27,8 +27,8 @@ REMOTE_POOL="zdata"
 REMOTE_USER="master"
 SNAP_PREFIX="autobackup"
 SSH_OPTS="-o BatchMode=yes -o ConnectTimeout=5"
-LOCKFILE="/tmp/run/zfsbackup.lock"
-LOGFILE="/var/log/zfsbackup.log"
+LOCKFILE="/tmp/zfsbackup.lock"
+LOGFILE="/tmp/zfsbackup.log"
 
 # Список датасетов по умолчанию (без имени пула, только "хвост").               
 # Например для zdata/Projects/POSTKINO указываем просто "POSTKINO".
