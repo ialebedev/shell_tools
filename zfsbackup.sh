@@ -129,7 +129,7 @@ process_dataset() {
     if [[ -z "$prev_snap" ]]; then
         # Первая отправка датасета - полный поток
         if zfs send -Lv "$new_snap" \
-             | ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_IP}" "zfs receive -F ${remote_ds}"; then
+             | ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_IP}" "zfs receive -d ${remote_ds}"; then
             log "OK: полная отправка ${new_snap} завершена успешно"
         else
             log "ОШИБКА при полной отправке ${new_snap}. Откатываем локальный снапшот"
@@ -139,7 +139,7 @@ process_dataset() {
     else
         # Инкрементальная отправка снапшота
         if zfs send -Lvi "$prev_snap" "$new_snap" \
-             | ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_IP}" "zfs receive -F ${remote_ds}"; then
+             | ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_IP}" "zfs receive -d ${remote_ds}"; then
             log "OK: инкрементальная отправка ${prev_snap} -> ${new_snap} завершена успешно"    
         else
             log "ОШИБКА при отправке ${new_snap}, удалеяем его. Оставляем предыдущий снапшот"
