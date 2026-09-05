@@ -22,6 +22,19 @@ set -eo pipefail
 # -o в связке с pipefail означает строгий контроль ошибок внутри конвейеров
 # -v (verbose) подробный вывод
 
+# Цвета для консольного вывода. Отключаем, если вывод не в терминал
+# (например, при запуске из cron), чтобы не засорять лог/почту
+# escape-последовательностями.
+if [[ -t 1 ]]; then
+    C_RED='\033[0;31m'
+    C_GREEN='\033[0;32m'
+    C_RESET='\033[0m'
+else
+    C_RED=''
+    C_GREEN=''
+    C_RESET=''
+fi
+
 POOL="zdata"
 REMOTE_POOL="zdata"
 REMOTE_USER="master"
@@ -67,8 +80,27 @@ if [[ $# -gt 0 ]]; then
 fi
 
 # Функция логирования
+# log() {
+#     echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOGFILE"
+# }
+
+# Функция логирования
+# В файл всегда пишем чистый текст (без ANSI-кодов), в консоль —
+# с подсветкой: ОШИБКА красным, OK зелёным.
 log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOGFILE"
+    local msg="$*"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
+
+    echo "${ts} ${msg}" >> "$LOGFILE"
+
+    if [[ "$msg" == *"ОШИБКА"* ]]; then
+        echo -e "${ts} ${C_RED}${msg}${C_RESET}"
+    elif [[ "$msg" == *"OK"* ]]; then
+        echo -e "${ts} ${C_GREEN}${msg}${C_RESET}"
+    else
+        echo "${ts} ${msg}"
+    fi
 }
 
 # Защита от повторного запуска
