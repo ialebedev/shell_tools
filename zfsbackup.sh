@@ -25,7 +25,7 @@ set -eo pipefail
 POOL="zdata"
 REMOTE_POOL="zdata"
 REMOTE_USER="master"
-SNAP_PREFIX="autobackup"
+SNAP_PREFIX=""
 SSH_OPTS="-o BatchMode=yes -o ConnectTimeout=5"
 LOCKFILE="/tmp/zfsbackup.lock"
 LOGFILE="/tmp/zfsbackup.log"
@@ -34,6 +34,11 @@ LOGFILE="/tmp/zfsbackup.log"
 # Например для zdata/Projects/POSTKINO указываем просто "POSTKINO".
 DATASETS=(
     "Programs"
+    "Caches/9thPlanet"
+    "Caches/Chaika"
+    "Caches/POSTKINO"
+    "Caches/TECZON"
+    "Caches/VVP"
     "Projects/9thPlanet"
     "Projects/Chaika"
     "Projects/POSTKINO"
@@ -101,12 +106,12 @@ process_dataset() {
 
     # Ищем крайний снапшот с нашим префиксом
     prev_snap=$(zfs list -t snapshot -o name -s creation -H -r "$full_ds" 2>/dev/null \
-                | grep -E "^${full_ds}@${SNAP_PREFIX}-" | tail -n1 || true)
+                | grep -E "^${full_ds}@" | tail -n1 || true)
 
 
     # Формируем название нового снапшота
     ts=$(date +%Y.%m.%d_%H:%M:%S)
-    new_snap="${full_ds}@${SNAP_PREFIX}-${ts}"
+    new_snap="${full_ds}@${SNAP_PREFIX}${ts}"
 
     # Создаем снапшот
     if ! zfs snapshot "$new_snap"; then
