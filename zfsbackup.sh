@@ -38,7 +38,8 @@ fi
 POOL="zdata"
 REMOTE_POOL="zdata"
 REMOTE_USER="master"
-SNAP_PREFIX=""
+SNAP_PREFIX="backup"
+MAX_SNAPSHOTS=14
 SSH_OPTS="-o BatchMode=yes -o ConnectTimeout=5"
 LOCKFILE="/tmp/zfsbackup.lock"
 LOGFILE="/tmp/zfsbackup.log"
@@ -61,28 +62,38 @@ DATASETS=(
 )
 
 usage() {
-    echo "Использование: $0 <remote_ip> [dataset1 dataset2 ...]" >&2
+    echo "Использование:" >&2
+    echo "  $0 backup <remote_ip> [dataset1 dataset2 ...]" >&2
+    echo "  $0 cleanup [dataset1 dataset2 ...]" >&2
     echo "Если датасеты не переданы, то используем список DATASETS" >&2
     exit 1
 }
 
 # Если число переданых параметров < 1, то вызываем usage
 [[ $# -lt 1 ]] && usage
-
-REMOTE_IP=$1
+MODE="$1"
 
 # Сдвигаем аргументы влева (удаляем первый элемент)
 shift
+
+# Определяем режим работы скрипта (backup или cleanup)
+case "$MODE" in
+    backup)
+        [[ $# -lt 1 ]] && usage
+        REMOTE_IP="$1"
+        shift
+        ;;
+    cleanup)
+        ;;
+    *)
+        usage
+        ;;
+esac
 
 # Если парамметры еще есть, то считаем, что передали датасеты
 if [[ $# -gt 0 ]]; then
     DATASETS=("$@")
 fi
-
-# Функция логирования
-# log() {
-#     echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOGFILE"
-# }
 
 # Функция логирования
 # В файл всегда пишем чистый текст (без ANSI-кодов), в консоль —
@@ -115,15 +126,10 @@ check_ssh() {
     ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_IP}" "zfs list >/dev/null 2>&1"
 }
 
-log "===== Запуск бэкапа на ${REMOTE_IP} ====="
-
-if ! check_ssh; then
-    log "ОШИБКА: нет доступа по SSH к ${REMOTE_IP}, либо ZFS там недоступен"
-    exit 1
-fi
+# ========================= РЕЖИМ: backup =========================  #
 
 # Функция работы с датасетом
-process_dataset() {
+backup_dataset() {
     local ds="$1"
     local full_ds="${POOL}/${ds}"
     local remote_ds="${REMOTE_POOL}/${ds}"
@@ -142,8 +148,8 @@ process_dataset() {
 
 
     # Формируем название нового снапшота
-    ts=$(date +%Y.%m.%d_%H:%M:%S)
-    new_snap="${full_ds}@${SNAP_PREFIX}${ts}"
+    ts=$(date +%Y.%m.%d-%H:%M:%S)
+    new_snap="${full_ds}@${SNAP_PREFIX}-${ts}"
 
     # Создаем снапшот
     if ! zfs snapshot "$new_snap"; then
@@ -188,14 +194,66 @@ process_dataset() {
     return 0
 }
 
-# Запускаем обработку датасетов
-FAILED=0
-for ds in "${DATASETS[@]}"; do
-    if ! process_dataset "$ds"; then
-        FAILED=1
+run_backup() {
+    log "===== Запуск бэкапа на ${REMOTE_IP} ====="
+
+    if ! check_ssh; then
+        log "ОШИБКА: нет доступа по SSH к ${REMOTE_IP}, либо ZFS там недоступен"
+        exit 1
     fi
-done
 
-log "===== Бэкап завершен (код возврата: ${FAILED}) ====="
+    # Запускаем обработку датасетов
+    local failed=0
+    local ds
+    for ds in "${DATASETS[@]}"; do
+        if ! backup_dataset "$ds"; then
+            failed=1
+        fi
+    done
 
-exit $FAILED
+    log "===== Бэкап завершен (код возврата: ${failed}) ====="
+    exit $failed
+}
+
+# ========================= РЕЖИМ: cleanup =========================  #
+
+cleanup_dataset() {
+    local ds="$1"
+    local full_ds="${POOL}/${ds}"
+    local snaps=()
+    local snap creation_epoch creation_date
+
+    log "== Очистка ${full_ds} =="
+
+    if ! zfs list "$full_ds" >/dev/null 2>&1; then
+        log "ОШИБКА: датасет $full_ds не существует. Пропускаем"
+        return 1
+    fi
+
+}
+
+run_cleanup(){
+    log "===== Запуск очистки снапшотов ====="
+
+    local failed=0
+    local ds
+    for ds in "${DATASETS[@]}"; do
+        if ! cleanup_dataset "$ds"; then
+            failed=1
+        fi
+    done
+
+    log "===== Очистка завершена (код возврата: ${failed}) ====="
+    exit $failed
+}
+
+# ============================= MAIN ===============================  #
+
+case "$MODE" in
+    backup)
+        run_backup
+        ;;
+    cleanup)
+        run_cleanup
+        ;;
+esac
