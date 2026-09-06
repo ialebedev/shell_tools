@@ -230,6 +230,16 @@ cleanup_dataset() {
         return 1
     fi
 
+    # Все НАШИ снапшоты (с префиксом SNAP_PREFIX), от старых к новым
+    mapfile -t snaps < <(zfs list -t snapshot -o name -s creation -H -r \
+        "$full_ds" 2>/dev/null | grep -E "^${full_ds}@${SNAP_PREFIX}-")
+
+    if [[ ${#snaps[@]} -eq 0 ]]; then
+        log "Нет снапшотов с префиксом ${SNAP_PREFIX} для ${full_ds}, пропускаем"
+        return 0
+    fi
+
+    echo "$snaps"
 }
 
 run_cleanup(){
