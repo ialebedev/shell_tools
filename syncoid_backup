@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -e
+
+SANOID_CONF="/etc/sanoid/sanoid.conf"
+REMOTE_HOST="master@192.168.20.11"
+REMOTE_POOL="zdata"
+LOGFILE="/tmp/syncoid_backup.log"
+
+# Получаем список датасетов прямо из sanoid.conf,
+# исключая служебные секции template_*
+mapfile -t DATASETS < <(grep -oP '^\[\K[^\]]+(?=\]$)' "$SANOID_CONF" | grep -v '^template_')
+
+if [ ${#DATASETS[@]} -eq 0 ]; then
+    echo "ОШИБКА: не удалось найти датасеты в $SANOID_CONF" | tee -a "$LOGFILE"
+    exit 1
+fi
+
+echo "=== Sync run: $(date '+%Y-%m-%d %H:%M:%S') ===" >> "$LOGFILE"
+echo "Найдено датасетов: ${#DATASETS[@]}" >> "$LOGFILE"
+
+for ds in "${DATASETS[@]}"; do
+    target="${REMOTE_POOL}/${ds#zdata/}"
+    echo "--- $ds -> ${REMOTE_HOST}:${target} ---" | tee -a "$LOGFILE"
+
+    if ! syncoid --no-privilege-elevation --no-sync-snap --sendoptions="L" \
+        "$ds" "${REMOTE_HOST}:${target}" >> "$LOGFILE" 2>&1; then
+        echo "ОШИБКА при синхронизации $ds" | tee -a "$LOGFILE"
+    fi
+done
+
+echo "=== Sync run finished: $(date '+%Y-%m-%d %H:%M:%S') ===" >> "$LOGFILE"
