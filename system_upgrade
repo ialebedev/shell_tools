@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-# Создание снимка системы
-system_snapshot
-
-# Запуск обновления
-yay -Syu

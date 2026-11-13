@@ -19,7 +19,7 @@ TIMESTAMP=$(date +'%Y.%m.%d_%H:%M:%S')
 DATASETS=(
     "zroot/ROOT/arch"
     "zroot/DATA/home"
-    "zroot/DATA/root"
+    # "zroot/DATA/root"
 )
 
 for ds in "${DATASETS[@]}"; do
