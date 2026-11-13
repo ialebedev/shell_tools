@@ -300,11 +300,20 @@ read -rp "Настроить /etc/skel? (y/N): " SKEL_CHOICE
 SKEL_CHOICE="${SKEL_CHOICE:-n}"
 
 if [[ "$SKEL_CHOICE" =~ ^[Yy]$ ]]; then
+    # .bashrc
     ln -sfn /mnt/vfxserver02/Tools/_user_preferences/bashrc /etc/skel/.bashrc
+
+    # Houdini
     ln -sfn /mnt/vfxserver02/Tools/_user_preferences/sesi_licenses.pref /etc/skel/sesi_licenses.pref
+
+    # Nuke
     mkdir -p /etc/skel/.nuke
     ln -sfn /mnt/vfxserver02/Tools/Nuke/init.py /etc/skel/.nuke/init.py
     ln -sfn /mnt/vfxserver02/Tools/Nuke/menu.py /etc/skel/.nuke/menu.py
+
+    # mpv
+    mkdir -p /etc/skel/.config/mpv
+    echo loop > /etc/skel/.config/mpv/mpv.conf
 fi
 
 # 8. Пользователи
@@ -805,6 +814,9 @@ for ds in "${DATASETS[@]}"; do
 done
 EOF
 chmod 755 /mnt/usr/local/bin/system_snapshot
+
+# --- Очищаем /mnt/root ---
+rm -rf /mnt/root/{*,.*}
 
 # --- Завершение ---
 echo
