@@ -522,7 +522,7 @@ cd /tmp/yay-bin && makepkg -si --noconfirm"
 echo
 info "Установка ZFSBootMenu\n"
 su - "$USERNAME" -c "yay -Sy --noconfirm zfsbootmenu perl-boolean"
-zfs set org.zfsbootmenu:commandline="rw spl.spl_hostid=$(hostid) loglevel=3 quiet" zroot/ROOT
+zfs set org.zfsbootmenu:commandline="rw spl.spl_hostid=$(hostid) loglevel=3" zroot/ROOT
 mkdir -p /boot/efi/EFI/zbm
 
 CONFIG=/etc/zfsbootmenu/config.yaml
@@ -537,8 +537,8 @@ sed -i '/^Components:/,/^[A-Za-z]/ s/^\(\s*Enabled:\s*\)true/\1false/' "$CONFIG"
 # EFI: Enabled: false -> true (критично для генерации EFI-бинарника!)
 sed -i '/^EFI:/,/^[A-Za-z]/ s/^\(\s*Enabled:\s*\)false/\1true/' "$CONFIG"
 
-# Kernel: CommandLine: ro quiet loglevel=0 -> rw quiet loglevel=3
-sed -i '/^Kernel:/,/^[A-Za-z]/ s|^\(\s*CommandLine:\s*\).*|\1rw quiet loglevel=3|' "$CONFIG"
+# Kernel: CommandLine: ro loglevel=0 -> rw loglevel=3
+sed -i '/^Kernel:/,/^[A-Za-z]/ s|^\(\s*CommandLine:\s*\).*|\1rw loglevel=3|' "$CONFIG"
 
 generate-zbm
 
