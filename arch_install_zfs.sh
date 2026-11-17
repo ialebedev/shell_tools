@@ -23,9 +23,6 @@ error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 # --- Сбор данных: выбор диска по номеру ---
 info "Поиск доступных дисков...\n"
 
-# Собираем список дисков: только TYPE=disk, исключаем loop, rom, sr
-# mapfile -t DISKS < <(lsblk -d -n -o NAME,SIZE,MODEL,TYPE | awk '$4=="disk" {print $1"|"$2"|"$3}')
-
 # Собираем список дисков через JSON (надёжно при пробелах в MODEL)
 mapfile -t DISKS < <(lsblk -d -n -J -o NAME,SIZE,MODEL,TYPE | jq -r '.blockdevices[] | select(.type=="disk") | "\(.name)|\(.size)|\(.model)"')
 
@@ -434,7 +431,7 @@ AFRENDER_CHOICE="${AFRENDER_CHOICE:-n}"
 if [[ "$AFRENDER_CHOICE" =~ ^[Yy]$ ]]; then
     PKGS+=(glu alsa-lib nss freetype2 fontconfig libglvnd libxv \
     libxmu libxi libxtst libxcomposite libxcursor libxrender \
-    libxkbcommon python-pyqt5)
+    libxkbcommon)
 fi
 
 # --- vfxstation ---
@@ -446,11 +443,15 @@ if [[ "$STATION_CHOICE" =~ ^[Yy]$ ]]; then
     PKGS+=(plasma-desktop plasma-login-manager plasma-pa \
     plasma-systemmonitor kdeplasma-addons breeze breeze-gtk \
     kde-gtk-config konsole dolphin pipewire pipewire-pulse \
-    pipewire-alsa transmission-qt sof-firmware \
-    # thunar thunar-volman gvfs thunar-archive-plugin \
-    spectacle filelight filezilla firefox firefox-ublock-origin \
+    pipewire-alsa transmission-qt sof-firmware spectacle \
+    filelight filezilla firefox firefox-ublock-origin \
     ttf-liberation ark kscreen krename kate okular mpv mediainfo \
     telegram-desktop obsidian doublecmd-qt6 powerdevil xclip)
+
+    # Ставим PyQT для запуска CGRU
+    if [[ "$AFRENDER_CHOICE" =~ ^[Yy]$ ]]; then
+        PKGS+=(python-pyqt5)
+    fi
 
     # Ставим аплет NetworkManager для KDE Plasma
     if [[ -n "$NET_CHOICE" && "$NET_CHOICE" != "1" ]]; then
