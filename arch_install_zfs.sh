@@ -24,7 +24,10 @@ error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 info "Поиск доступных дисков...\n"
 
 # Собираем список дисков: только TYPE=disk, исключаем loop, rom, sr
-mapfile -t DISKS < <(lsblk -d -n -o NAME,SIZE,MODEL,TYPE | awk '$4=="disk" {print $1"|"$2"|"$3}')
+# mapfile -t DISKS < <(lsblk -d -n -o NAME,SIZE,MODEL,TYPE | awk '$4=="disk" {print $1"|"$2"|"$3}')
+
+# Собираем список дисков через JSON (надёжно при пробелах в MODEL)
+mapfile -t DISKS < <(lsblk -d -n -J -o NAME,SIZE,MODEL,TYPE | jq -r '.blockdevices[] | select(.type=="disk") | "\(.name)|\(.size)|\(.model)"')
 
 if [[ ${#DISKS[@]} -eq 0 ]]; then
     error "Не найдено ни одного диска"
@@ -279,7 +282,7 @@ KEYMAP=ru
 XKBLAYOUT=ru,us
 XKBMODEL=pc105
 XKBOPTIONS=grp:alt_shift_toggle
-FONT=ter-v20b
+FONT=ter-v32b
 EOF
 
 # 6. Прописываем hostname и hosts
@@ -304,7 +307,7 @@ if [[ "$SKEL_CHOICE" =~ ^[Yy]$ ]]; then
     ln -sfn /mnt/vfxserver02/Tools/_user_preferences/bashrc /etc/skel/.bashrc
 
     # Houdini
-    ln -sfn /mnt/vfxserver02/Tools/_user_preferences/sesi_licenses.pref /etc/skel/sesi_licenses.pref
+    ln -sfn /mnt/vfxserver02/Tools/_user_preferences/sesi_licenses.pref /etc/skel/.sesi_licenses.pref
 
     # Nuke
     mkdir -p /etc/skel/.nuke
@@ -430,7 +433,8 @@ AFRENDER_CHOICE="${AFRENDER_CHOICE:-n}"
 
 if [[ "$AFRENDER_CHOICE" =~ ^[Yy]$ ]]; then
     PKGS+=(glu alsa-lib nss freetype2 fontconfig libglvnd libxv \
-    libxmu libxi libxtst libxcomposite libxcursor libxrender libxkbcommon)
+    libxmu libxi libxtst libxcomposite libxcursor libxrender \
+    libxkbcommon python-pyqt5)
 fi
 
 # --- vfxstation ---
@@ -501,11 +505,59 @@ systemctl enable zfs-import.target
 systemctl enable zfs-import-scan.service
 systemctl enable zfs-zed.service
 
+# --- Создание сервиса afrender (если выбран софт для afrender) ---
+if [[ "$AFRENDER_CHOICE" =~ ^[Yy]$ ]]; then
+    info "Создаём сервис afrender.service\n"
+    cat > /etc/systemd/system/afrender.service <<'EOF'
+[Unit]
+Description=Afanasy render daemon
+Wants=network-online.target
+After=network-online.target systemd-user-sessions.service rc-local.service
+Before=getty.target
+RequiresMountsFor=/mnt/vfxserver02
+
+[Service]
+Type=simple
+User=render
+#Group=render
+WorkingDirectory=/opt/cgru
+ExecStart=/opt/cgru/start/AFANASY/_afrender.sh -log_nodate
+KillMode=process
+TimeoutStopSec=3
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl enable afrender.service
+fi
+
 # 16. mkinitcpio
 echo
 info "Прописываем модули загрузки (zfs) и хуки (zfs)\n"
-sed -i 's/^MODULES=.*/MODULES=(zfs)/' /etc/mkinitcpio.conf
+
+# Формируем список модулей в зависимости от выбранной видеокарты
+case "${GPU_CHOICE:-1}" in
+    1) GPU_MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm" ;;
+    2) GPU_MODULES="amdgpu" ;;
+    3) GPU_MODULES="i915" ;;
+    4) GPU_MODULES="nouveau" ;;
+    *) GPU_MODULES="" ;;  # отказ от видеодрайвера — без KMS-модуля
+esac
+
+# Собираем MODULES=(zfs ...)
+if [[ -n "$GPU_MODULES" ]]; then
+    MODULES_LINE="MODULES=(zfs $GPU_MODULES)"
+else
+    MODULES_LINE="MODULES=(zfs)"
+fi
+
+# Заменяем строку MODULES и HOOKS
+sed -i "s/^MODULES=.*/${MODULES_LINE}/" /etc/mkinitcpio.conf
 sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard consolefont block zfs filesystems)/' /etc/mkinitcpio.conf
+
 mkinitcpio -P
 
 # 17. Временно отключаем ввод пароля для pacman
@@ -702,7 +754,7 @@ fi
 # Выполняется только если ранее был выбран софт для vfxstation
 if [[ "$STATION_CHOICE" =~ ^[Yy]$ ]]; then
     echo
-    read -rp "Создать иконки для программ? (y/N): " APPS_CHOICE
+    read -rp "Создать иконки для программ? (y/N): " APPS_ICONS_CHOICE
     APPS_ICONS_CHOICE="${APPS_ICONS_CHOICE:-n}"
 
     if [[ "$APPS_ICONS_CHOICE" =~ ^[Yy]$ ]]; then
@@ -714,7 +766,6 @@ if [[ "$STATION_CHOICE" =~ ^[Yy]$ ]]; then
         ln -sfn "${APPS_SRC}/CGRU.desktop" "/usr/share/applications/CGRU.desktop"
         ln -sfn "${APPS_SRC}/Cube.desktop" "/usr/share/applications/Cube.desktop"
         ln -sfn "${APPS_SRC}/DJV.desktop" "/usr/share/applications/DJV.desktop"
-        ln -sfn "${APPS_SRC}/CGRU.desktop" "/usr/share/applications/CGRU.desktop"
         ln -sfn "${APPS_SRC}/Krita.desktop" "/usr/share/applications/Krita.desktop"
         ln -sfn "${APPS_SRC}/Quixel.desktop" "/usr/share/applications/Quixel.desktop"
         ln -sfn "${APPS_SRC}/FilmCraft.desktop" "/usr/share/applications/FilmCraft.desktop"
