@@ -440,13 +440,18 @@ read -rp "Установить софт для vfxstation? (y/N): " STATION_CHOI
 STATION_CHOICE="${STATION_CHOICE:-n}"
 
 if [[ "$STATION_CHOICE" =~ ^[Yy]$ ]]; then
+
+    # Основные пакеты
     PKGS+=(plasma-desktop plasma-login-manager plasma-pa \
     plasma-systemmonitor kdeplasma-addons breeze breeze-gtk \
     kde-gtk-config konsole dolphin pipewire pipewire-pulse \
     pipewire-alsa transmission-qt sof-firmware spectacle \
     filelight filezilla firefox firefox-ublock-origin \
     ttf-liberation ark kscreen krename kate okular mpv mediainfo \
-    telegram-desktop obsidian doublecmd-qt6 powerdevil xclip)
+    telegram-desktop obsidian powerdevil xclip)
+
+    # Дополнительные пакеты
+    PKGS+=(gpu-screen-recorder-ui doublecmd-qt6)
 
     # Ставим PyQT для запуска CGRU
     if [[ "$AFRENDER_CHOICE" =~ ^[Yy]$ ]]; then
