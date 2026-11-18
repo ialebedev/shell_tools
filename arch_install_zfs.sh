@@ -767,12 +767,14 @@ if [[ "$STATION_CHOICE" =~ ^[Yy]$ ]]; then
         ln -sfn "${APPS_SRC}/CGRU.desktop" "/usr/share/applications/CGRU.desktop"
         ln -sfn "${APPS_SRC}/Cube.desktop" "/usr/share/applications/Cube.desktop"
         ln -sfn "${APPS_SRC}/DJV.desktop" "/usr/share/applications/DJV.desktop"
-        ln -sfn "${APPS_SRC}/Krita.desktop" "/usr/share/applications/Krita.desktop"
-        ln -sfn "${APPS_SRC}/Quixel.desktop" "/usr/share/applications/Quixel.desktop"
+        ln -sfn "${APPS_SRC}/EffectsCraft.desktop" "/usr/share/applications/EffectCraft.desktop"
         ln -sfn "${APPS_SRC}/FilmCraft.desktop" "/usr/share/applications/FilmCraft.desktop"
+        ln -sfn "${APPS_SRC}/Fusion.desktop" "/usr/share/applications/Fusion.desktop"
+        ln -sfn "${APPS_SRC}/Krita.desktop" "/usr/share/applications/Krita.desktop"
         ln -sfn "${APPS_SRC}/LightCraft.desktop" "/usr/share/applications/LightCraft.desktop"
         ln -sfn "${APPS_SRC}/PhotoCraft.desktop" "/usr/share/applications/PhotoCraft.desktop"
-        ln -sfn "${APPS_SRC}/EffectsCraft.desktop" "/usr/share/applications/EffectsCraft.desktop"
+        ln -sfn "${APPS_SRC}/Quixel.desktop" "/usr/share/applications/Quixel.desktop"
+        ln -sfn "${APPS_SRC}/SolidCraft.desktop" "/usr/share/applications/SolidCraft.desktop"
     fi
 fi
 
