@@ -403,7 +403,7 @@ echo -e '\nServer = https://github.com/archzfs/archzfs/releases/download/experim
 info "Установка базовых приложений\n"
 PKGS=(zfs-dkms zfs-utils nfs-utils exfat-utils ntfs-3g unrar zip \
       unzip p7zip duf btop tmux eza bat yazi zoxide fzf ethtool \
-      numactl ncdu lm_sensors) 
+      numactl ncdu lm_sensors stow) 
 
 # --- Сетевой менеджер ---
 echo "  1) systemd-networkd"
