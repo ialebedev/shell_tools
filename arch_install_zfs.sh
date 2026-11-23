@@ -93,13 +93,13 @@ parted -s "$DISK" mkpart "ZFS" ext4 66561MiB 100%
 
 # Определяем имена разделов (поддержка nvme и sd*)
 if [[ "$DISK_NAME" == nvme* ]]; then
-    PART_EFI="${DISK}p1"
-    PART_SWAP="${DISK}p2"
-    PART_ZFS="${DISK}p3"
+    PART_EFI="/dev/disk/by-id/${DISK_ID}-part1"
+    PART_SWAP="/dev/disk/by-id/${DISK_ID}-part2"
+    PART_ZFS="/dev/disk/by-id/${DISK_ID}-part3"
 else
-    PART_EFI="${DISK}1"
-    PART_SWAP="${DISK}2"
-    PART_ZFS="${DISK}3"
+    PART_EFI="/dev/disk/by-id/${DISK_ID}-1"
+    PART_SWAP="/dev/disk/by-id/${DISK_ID}-2"
+    PART_ZFS="/dev/disk/by-id/${DISK_ID}-3"
 fi
 
 # Форматирование EFI и swap
