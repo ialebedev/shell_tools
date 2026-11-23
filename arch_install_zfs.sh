@@ -26,7 +26,7 @@ for cmd in jq openssl parted wipefs zpool zfs zgenhostid pacstrap genfstab arch-
 done
 
 # --- Сбор данных: выбор диска по номеру ---
-info "Поиск доступных дисков...\n"
+info "Поиск доступных дисков..."
 
 # Возвращает полный путь к стабильному симлинку диска (без -partN)
 find_disk_link() {
@@ -154,16 +154,16 @@ IFS='|' read -r DISK_NAME _ _ <<< "${DISKS[$((DISK_CHOICE-1))]}"
 DISK="/dev/${DISK_NAME}"
 [[ -b "$DISK" ]] || error "Диск $DISK не найден"
 
-info "Выбран диск: $DISK\n"
+info "Выбран диск: $DISK"
 
 # Стабильный путь к диску (важно для ZFS)
 DISK_LINK=$(find_disk_link "$DISK") || error "Не найден стабильный путь для $DISK"
-info "Используем: $DISK_LINK\n"
+info "Используем: $DISK_LINK"
 
 # =====================================================================
 # --- Сбор параметров установки: ВСЕ вопросы здесь, дальше ввода не будет ---
 # =====================================================================
-info "Параметры установки\n"
+info "Параметры установки"
 
 # Имя хоста
 while true; do
@@ -199,7 +199,7 @@ case "$UCODE_CHOICE" in
 esac
 
 # --- Пользователи ---
-info "Учетные записи пользователей\n"
+info "Учетные записи пользователей"
 ask_username USERNAME "Введите имя пользователя (администратора)" root render
 ask_password_hash USERHASH "$USERNAME"
 
@@ -214,7 +214,7 @@ if [[ "$EXTRA_USER_CHOICE" == "y" ]]; then
 fi
 
 # --- Система и софт ---
-info "Система и софт\n"
+info "Система и софт"
 ask_yn SKEL_CHOICE "Настроить /etc/skel?"
 
 echo "Сетевой менеджер:"
@@ -234,7 +234,7 @@ echo "  0) Не устанавливать видеодрайвер"
 ask_choice GPU_CHOICE "Выберите драйвер видеокарты" "1" "0 1 2 3 4"
 
 # --- Настройка системы ---
-info "Настройка системы\n"
+info "Настройка системы"
 ask_yn NFS_CHOICE "Создать точки монтирования NFS?"
 ask_yn LINK_CHOICE "Создать символические ссылки?"
 ask_yn SLEEP_CHOICE "Отключить режимы сна и гибернации?"
@@ -248,7 +248,7 @@ if [[ "$STATION_CHOICE" == "y" ]]; then
 fi
 
 # --- Сводка и подтверждение ---
-info "Сводка параметров\n"
+info "Сводка параметров"
 GPU_NAMES=("нет" "Nvidia" "AMD" "Intel" "Nouveau")
 echo "  Диск: $DISK ($DISK_LINK)"
 echo "  Разметка (GPT): EFI 1G, SWAP 64G, ZFS - оставшееся место"
@@ -295,7 +295,7 @@ ask_yn CONFIRM "Всё верно, начать установку?"
 [[ "$CONFIRM" == "y" ]] || error "Отменено пользователем"
 
 # --- Разметка диска ---
-info "Разметка диска $DISK\n"
+info "Разметка диска $DISK"
 wipefs -a "$DISK"
 parted -s "$DISK" mklabel gpt
 parted -s "$DISK" mkpart "EFI" fat32 0% 1025MiB
@@ -316,7 +316,7 @@ for p in "$PART_EFI" "$PART_SWAP" "$PART_ZFS"; do
 done
 
 # Форматирование EFI и swap
-info "Форматирование EFI и SWAP\n"
+info "Форматирование EFI и SWAP"
 mkfs.vfat -F 32 "$PART_EFI"
 mkswap "$PART_SWAP"
 swapon "$PART_SWAP"
@@ -325,7 +325,7 @@ swapon "$PART_SWAP"
 zgenhostid -f
 
 # --- Создание ZFS пула ---
-info "Создание ZFS пула zroot\n"
+info "Создание ZFS пула zroot"
 zpool create -f \
     -o ashift=12 \
     -o autotrim=on \
@@ -345,7 +345,7 @@ zpool create -f \
     zroot "$PART_ZFS"
 
 # --- Создание датасетов ---
-info "Создание датасетов\n"
+info "Создание датасетов"
 zfs create -o mountpoint=none -o canmount=off zroot/ROOT
 echo -e "zroot/ROOT" 
 zfs create -o mountpoint=none -o canmount=off zroot/DATA
@@ -359,7 +359,7 @@ echo -e "zroot/DATA/home"
 zpool set bootfs=zroot/ROOT/arch zroot
 
 # Монтирование
-info "Монтирование датасетов\n"
+info "Монтирование датасетов"
 zfs mount zroot/ROOT/arch
 echo -e "zroot/ROOT/arch" 
 zfs mount zroot/DATA/home
@@ -389,7 +389,7 @@ else
 fi
 
 # --- Установка базовой системы ---
-info "Установка базовой системы (pacstrap)\n"
+info "Установка базовой системы"
 pacstrap -K /mnt base base-devel linux-lts linux-lts-headers linux-firmware \
     "$UCODE" dkms helix bash-completion openssh terminus-font python git \
     reflector rsync efibootmgr
@@ -398,7 +398,7 @@ pacstrap -K /mnt base base-devel linux-lts linux-lts-headers linux-firmware \
 cp -f /etc/hostid /mnt/etc/hostid
 
 # --- Генерация fstab ---
-info "Генерация /etc/fstab\n"
+info "Генерация /etc/fstab"
 genfstab -U /mnt > /mnt/etc/fstab
 # Правка fstab (удаляем ZFS-записи, оставляем EFI и swap)
 # Исправляем маску EFI (если genfstab поставил 0022)
@@ -407,7 +407,7 @@ sed -i -E '/vfat/s/(fmask|dmask)=0022/\1=0077/g' /mnt/etc/fstab || true
 
 # --- Копирование обновленного mirrorlist в установленную систему ---
 if [[ "${REFLECTOR_CHOICE:-n}" =~ ^[Yy]$ ]]; then
-    info "Копируем обновлённый mirrorlist в установленную систему\n"
+    info "Копируем обновлённый mirrorlist в установленную систему"
     cp -f /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
 fi
 
@@ -431,27 +431,27 @@ error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 source /root/install.conf
 
 # 1. Ссылка на helix
-info "Ссылка на helix (hx -> helix)\n"
+info "Ссылка на helix (hx -> helix)"
 ln -sf /usr/bin/helix /usr/local/bin/hx
 
 # 2. Часовой пояс
-info "Настраиваем часовой пояс на Europe/Moscow\n"
+info "Настраиваем часовой пояс на Europe/Moscow"
 ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime
 hwclock --systohc
 
 # 3. NTP
-info "Настраиваем NTP сервер (192.168.20.1)\n"
+info "Настраиваем NTP сервер (192.168.20.1)"
 sed -i 's/^#\?NTP=.*/NTP=192.168.20.1/' /etc/systemd/timesyncd.conf
 systemctl enable systemd-timesyncd.service
 
 # 4. Локаль
-info "Настраиваем локаль\n"
+info "Настраиваем локаль"
 sed -i 's/#ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/' /etc/locale.gen
 locale-gen
 echo "LANG=ru_RU.UTF-8" > /etc/locale.conf
 
 # 5. Консоль
-info "Настраиваем консоль\n"
+info "Настраиваем консоль"
 cat > /etc/vconsole.conf <<'EOF'
 KEYMAP=ru
 XKBLAYOUT=ru,us
@@ -460,8 +460,8 @@ XKBOPTIONS=grp:alt_shift_toggle
 FONT=ter-v32b
 EOF
 
-# 6. Прописываем hostname и hosts
-info "Прописываем hostname и hosts\n"
+# 6. Hostname и Hosts
+info "Прописываем hostname и hosts"
 echo "$HOSTNAME" >> /etc/hostname
 echo "127.0.1.1        ${HOSTNAME}.local       ${HOSTNAME}" >> /etc/hosts
 echo "" >> /etc/hosts
@@ -492,7 +492,7 @@ if [[ "$SKEL_CHOICE" =~ ^[Yy]$ ]]; then
 fi
 
 # 8. Пользователи
-info "Настройка учетных записей пользователей\n"
+info "Настройка учетных записей пользователей"
 useradd -mG wheel,input,audio,video,storage,power,lp -s /bin/bash "$USERNAME"
 echo "${USERNAME}:${USERHASH}" | chpasswd -e
 sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
@@ -524,7 +524,7 @@ if [[ "$STUDIO_REPO_CHOICE" =~ ^[Yy]$ ]]; then
 fi
 
 # 12. Репозиторий archzfs
-info "Добавляем репозиторий archzfs\n"
+info "Добавляем репозиторий archzfs"
 
 ARCHZFS_KEY="3A9917BF0DED5C13F69AC68FABEC0A1208037BE9"
 pacman-key --recv-keys "$ARCHZFS_KEY"
@@ -539,7 +539,7 @@ EOF
 
 # 13. Установка приложений
 # --- Базовые приложения ---
-info "Установка базовых приложений\n"
+info "Установка базовых приложений"
 PKGS=(zfs-dkms zfs-utils nfs-utils exfat-utils ntfs-3g unrar zip \
       unzip p7zip duf btop tmux eza bat yazi zoxide fzf ethtool \
       numactl ncdu lm_sensors stow) 
@@ -574,7 +574,7 @@ if [[ "$STATION_CHOICE" =~ ^[Yy]$ ]]; then
     pipewire-alsa transmission-qt sof-firmware spectacle \
     filelight filezilla firefox firefox-ublock-origin \
     ttf-liberation ark kscreen krename kate okular mpv mediainfo \
-    telegram-desktop obsidian powerdevil xclip)
+    telegram-desktop obsidian powerdevil xclip tesseract-data-rus)
 
     # Дополнительные пакеты
     PKGS+=(gpu-screen-recorder-ui doublecmd-qt6)
@@ -605,7 +605,7 @@ pacman -Sy --needed --noconfirm "${PKGS[@]}"
 [[ -f /etc/hostid ]] || error "Отсутствует /etc/hostid"
 
 # 15. Сервисы
-info "Включение systemd сервисов\n"
+info "Включение systemd сервисов"
 
 if [[ -z "$NET_CHOICE" || "$NET_CHOICE" == "1" ]]; then
     systemctl enable systemd-networkd.service
@@ -626,7 +626,7 @@ systemctl enable zfs-zed.service
 
 # --- Создание сервиса afrender (если выбран софт для afrender) ---
 if [[ "$AFRENDER_CHOICE" =~ ^[Yy]$ ]]; then
-    info "Создаём сервис afrender.service\n"
+    info "Создаём сервис afrender.service"
     cat > /etc/systemd/system/afrender.service <<'EOF'
 [Unit]
 Description=Afanasy render daemon
@@ -654,7 +654,7 @@ EOF
 fi
 
 # 16. mkinitcpio
-info "Прописываем модули загрузки (zfs) и хуки (zfs)\n"
+info "Прописываем модули загрузки (zfs) и хуки"
 
 # Формируем список модулей в зависимости от выбранной видеокарты
 case "${GPU_CHOICE:-1}" in
@@ -688,12 +688,12 @@ chmod 440 "$SUDOERS_TMP"
 visudo -cf "$SUDOERS_TMP" >/dev/null || error "Некорректный sudoers-файл"
 
 # 18. YAY
-info "Установка YAY (пакет yay-bin)\n"
+info "Установка YAY (пакет yay-bin)"
 su - "$USERNAME" -c "git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin && \
 cd /tmp/yay-bin && makepkg -si --noconfirm"
 
 # 19. ZFSBootMenu
-info "Установка ZFSBootMenu\n"
+info "Установка ZFSBootMenu"
 su - "$USERNAME" -c "yay -Sy --noconfirm zfsbootmenu perl-boolean"
 
 # Пароль для pacman больше не нужен: дальше всё выполняется от root
@@ -720,14 +720,14 @@ sed -i '/^Kernel:/,/^[A-Za-z]/ s|^\(\s*CommandLine:\s*\).*|\1rw loglevel=3|' "$C
 generate-zbm
 
 # 20. EFI запись
-info "Создание загрузочной записи в EFI\n"
+info "Создание загрузочной записи в EFI"
 efibootmgr --disk "${DISK}" --part 1 --create --label "ZFSBootMenu" \
     --loader '\EFI\zbm\vmlinuz-linux-lts.EFI' \
     --unicode "spl_hostid=$(hostid) zbm.timeout=3 zbm.prefer=zroot zbm.import_policy=hostid" \
     --verbose
 
-# 21. Отключаем учетную запись root
-info "Отключаем учетную запись root\n"
+# 21. Отключаем root
+info "Отключаем учетную запись root"
 passwd -l root
 
 # 22. Создание сервисов монтирования серверов по NFS
@@ -900,7 +900,7 @@ install -m 600 /dev/null /mnt/root/install.conf
 declare -p "${CONF_VARS[@]}" > /mnt/root/install.conf
 
 # --- Запуск второго этапа в chroot ---
-info "Запуск конфигурации в arch-chroot\n"
+info "Запуск конфигурации в arch-chroot"
 arch-chroot /mnt /root/setup-chroot.sh
 
 # --- Настройка resolv.conf для systemd-resolved (вне chroot) ---
@@ -943,11 +943,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Формирование временной метки
-# Формат с дефисами/точками (рекомендуемый):
-# TIMESTAMP=$(date +'%Y.%m.%d_%H.%M.%S')
-
-# Формат строго с двоеточиями (как в вашем примере):
-TIMESTAMP=$(date +'%Y.%m.%d_%H:%M:%S')
+TIMESTAMP=$(date +'%Y.%m.%d_%H.%M.%S')
 
 # Список целевых датасетов
 DATASETS=(
