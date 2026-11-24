@@ -792,12 +792,15 @@ if [[ "$LINK_CHOICE" =~ ^[Yy]$ ]]; then
     ln -sfn /soft/isl /opt/isl
     ln -sfn /soft/isl /etc/opt/isl
     ln -sfn /soft/OFX /usr/OFX
-    ln -sfn /soft/houdini /opt/houdini
     ln -sfn /soft/foundry /usr/local/foundry
 
     ln -sfn /lib/libidn.so.12 /lib/libidn.so.11
     ln -sfn /lib/libtiff.so.6 /lib/libtiff.so.5
+    ln -sfn /lib/libxmlb.so.16 /lib/libtiff.so.2
+
+    # Substance
     ln -sfn /lib/libcrypt.so.2 /lib/libcrypt.so.1
+    
     ln -sfn /lib/libpython3.14.so.1.0 /lib/libpython3.11.so.1.0
 fi
 
