@@ -217,6 +217,21 @@ fi
 info "Система и софт"
 ask_yn SKEL_CHOICE "Настроить /etc/skel?"
 
+# --- Размер шрифта консоли ---
+echo "Размер шрифта консоли:"
+echo "  1) ter-v20b"
+echo "  2) ter-v24b"
+echo "  3) ter-v28b"
+echo "  4) ter-v32b (по умолчанию)"
+ask_choice FONT_CHOICE "Выберите размер шрифта" "4" "1 2 3 4"
+
+case "$FONT_CHOICE" in
+    1) CONSOLE_FONT="ter-v20b" ;;
+    2) CONSOLE_FONT="ter-v24b" ;;
+    3) CONSOLE_FONT="ter-v28b" ;;
+    4) CONSOLE_FONT="ter-v32b" ;;
+esac
+
 echo "Сетевой менеджер:"
 echo "  1) systemd-networkd"
 echo "  2) NetworkManager"
@@ -256,6 +271,7 @@ echo "  Имя хоста: $HOSTNAME"
 echo "  Администратор: $USERNAME"
 echo "  Микрокод: $UCODE"
 echo "  Видеодрайвер: ${GPU_NAMES[$GPU_CHOICE]}"
+echo "  Шрифт консоли: $CONSOLE_FONT"
 [[ "$NET_CHOICE" == "1" ]] && echo "  Сеть: systemd-networkd" || echo "  Сеть: NetworkManager"
 
 SUMMARY_FLAGS=(
@@ -263,7 +279,7 @@ SUMMARY_FLAGS=(
     "Зеркала через reflector|REFLECTOR_CHOICE"
     "Пользователь render|RENDER_CHOICE"
     "Дополнительный пользователь|EXTRA_USER_CHOICE"
-    "/etc/skel|SKEL_CHOICE"
+    "Настройка /etc/skel|SKEL_CHOICE"
     "Софт afrender|AFRENDER_CHOICE"
     "Софт vfxstation|STATION_CHOICE"
     "NFS-точки монтирования|NFS_CHOICE"
@@ -454,12 +470,12 @@ echo "LANG=ru_RU.UTF-8" > /etc/locale.conf
 
 # 5. Консоль
 info "Настраиваем консоль"
-cat > /etc/vconsole.conf <<'EOF'
+cat > /etc/vconsole.conf <<EOF
 KEYMAP=ru
 XKBLAYOUT=ru,us
 XKBMODEL=pc105
 XKBOPTIONS=grp:alt_shift_toggle
-FONT=ter-v32b
+FONT=${CONSOLE_FONT}
 EOF
 
 # 6. Hostname и Hosts
@@ -601,7 +617,7 @@ case "${GPU_CHOICE:-1}" in
     *) ;;
 esac
 
-pacman -Sy --needed --noconfirm "${PKGS[@]}"
+pacman -Syu --needed --noconfirm "${PKGS[@]}"
 
 # 14. Идентификатор системы для ZFS
 [[ -f /etc/hostid ]] || error "Отсутствует /etc/hostid"
@@ -757,8 +773,9 @@ if [[ "$NFS_CHOICE" =~ ^[Yy]$ ]]; then
 [Unit]
 Description=Mount ${HOST}
 Wants=network-online.target
-After=network-online.target
+After=network-online.target zfs.target
 Before=remote-fs.target
+RequiresMountsFor=/mnt
 
 [Mount]
 What=${IP}:/mnt/${HOST}
@@ -895,7 +912,7 @@ chmod +x /mnt/root/setup-chroot.sh
 # Файл с ответами (включая хеши паролей) доступен только root и удаляется
 # при финальной очистке /mnt/root
 CONF_VARS=(
-    HOSTNAME DISK
+    HOSTNAME DISK CONSOLE_FONT
     USERNAME USERHASH EXTRA_USER_CHOICE EXTRA_USERNAME EXTRA_USERHASH RENDER_CHOICE
     STUDIO_REPO_CHOICE SKEL_CHOICE NET_CHOICE AFRENDER_CHOICE STATION_CHOICE GPU_CHOICE
     NFS_CHOICE LINK_CHOICE SLEEP_CHOICE TRIM_CHOICE USB_RULES_CHOICE BASEDIR_CHOICE
