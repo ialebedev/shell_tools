@@ -991,5 +991,5 @@ rm -rf /mnt/root/{*,.*}
 
 # --- Завершение ---
 info "Установка завершена. Размонтирование дисков.\n"
-# umount -R /mnt
-# zpool export zroot
+umount -R /mnt
+zpool export zroot
