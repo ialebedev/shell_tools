@@ -440,8 +440,10 @@ ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime
 hwclock --systohc
 
 # 3. NTP
-info "Настраиваем NTP сервер (192.168.20.1)"
-sed -i 's/^#\?NTP=.*/NTP=192.168.20.1/' /etc/systemd/timesyncd.conf
+IP=$(ip -4 route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src") {print $(i+1); exit}}') || true
+if [[ -n "$IP" ]]; then NTP_SERVER="${IP%.*}.1"; else NTP_SERVER="192.168.20.1"; fi
+info "Настраиваем NTP сервер ($NTP_SERVER)"
+sed -i "s/^#\?NTP=.*/NTP=${NTP_SERVER}/" /etc/systemd/timesyncd.conf
 systemctl enable systemd-timesyncd.service
 
 # 4. Локаль
