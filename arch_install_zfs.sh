@@ -579,7 +579,7 @@ if [[ "$STATION_CHOICE" =~ ^[Yy]$ ]]; then
     telegram-desktop obsidian powerdevil xclip tesseract-data-rus)
 
     # Дополнительные пакеты
-    PKGS+=(gpu-screen-recorder-ui doublecmd-qt6)
+    PKGS+=(gpu-screen-recorder-ui zenity doublecmd-qt6)
 
     # Ставим PyQT для запуска CGRU
     if [[ "$AFRENDER_CHOICE" =~ ^[Yy]$ ]]; then
