@@ -560,7 +560,7 @@ EOF
 info "Установка базовых приложений"
 PKGS=(zfs-dkms zfs-utils nfs-utils exfat-utils ntfs-3g unrar zip \
       unzip p7zip duf btop tmux eza bat yazi zoxide fzf ethtool \
-      numactl ncdu lm_sensors stow) 
+      numactl ncdu lm_sensors stow bind) 
 
 # --- Сетевой менеджер ---
 if [[ -z "$NET_CHOICE" || "$NET_CHOICE" == "1" ]]; then
